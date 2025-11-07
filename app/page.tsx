@@ -7,25 +7,53 @@ import { Textarea } from "@/components/ui/textarea";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { Label } from "@radix-ui/react-label";
 import { FormEventHandler, useState } from "react";
+import * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim/record";
 
 export default function Home() {
-  const { atProtoAgent } = useOAuthContext();
+  const { atProtoAgent, session } = useOAuthContext();
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
   const [workScope, setWorkScope] = useState("");
   const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date | null>(null);
   const [workTimeframeTo, setWorkTimeframeTo] = useState<Date | null>(null);
 
-  const handleSubmit: FormEventHandler = (e) => {
-    if (!atProtoAgent) return;
+  const handleSubmit: FormEventHandler = async (e) => {
     e.preventDefault();
-    console.log({
+    if (!atProtoAgent || !session) return;
+    const record = {
+      $type: "org.hypercerts.claim.record",
       title,
-      description,
+      shortDescription,
       workScope,
-      workTimeframeFrom,
-      workTimeframeTo,
-    });
+      workTimeframeFrom: workTimeframeFrom?.toISOString() || null,
+      workTimeFrameTo: workTimeframeTo?.toISOString() || null,
+      createdAt: new Date().toISOString(),
+    };
+    if (
+      HypercertRecord.isRecord(record) &&
+      HypercertRecord.validateRecord(record).success
+    ) {
+      console.log("Validation Passed");
+      console.log(atProtoAgent.assertDid);
+      console.log({
+        title,
+        shortDescription,
+        workScope,
+        workTimeframeFrom,
+        workTimeframeTo,
+      });
+      await atProtoAgent.com.atproto.repo.createRecord({
+        rkey: new Date().getTime().toString(),
+        record,
+        collection: "org.hypercerts.claim.record",
+        repo: atProtoAgent.assertDid,
+      });
+      console.log("record created");
+    } else {
+      console.log("isRecord", HypercertRecord.isRecord(record));
+      console.log(HypercertRecord.validateRecord(record));
+      console.log("validation failed");
+    }
   };
   return (
     <form
@@ -44,7 +72,7 @@ export default function Home() {
       <div className="flex flex-col gap-1">
         <Label htmlFor="description">Short Description</Label>
         <Textarea
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => setShortDescription(e.target.value)}
           id="description"
           placeholder="Enter a short description"
           required
