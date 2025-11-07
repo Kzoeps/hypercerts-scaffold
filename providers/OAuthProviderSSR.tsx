@@ -32,7 +32,6 @@ export function OAuthProvider({ children }: PropsWithChildren) {
   const initStartedRef = useRef(false);
 
   useEffect(() => {
-    console.log(buildClientMetadata());
     if (clientRef.current) return;
     clientRef.current = new BrowserOAuthClient({
       // keep as true for now
