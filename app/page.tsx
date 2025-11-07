@@ -1,6 +1,5 @@
 "use client";
-import { useOAuthContext } from "@/providers/OAuthProvider";
-import Image from "next/image";
+import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { useRef } from "react";
 
 export default function Home() {

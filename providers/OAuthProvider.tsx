@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import {
   PropsWithChildren,
   createContext,
@@ -7,133 +7,133 @@ import {
   useEffect,
   useRef,
   useState,
-} from 'react'
+} from "react";
 import type {
   BrowserOAuthClient,
   OAuthSession,
-} from '@atproto/oauth-client-browser'
+} from "@atproto/oauth-client-browser";
 
 // this implementation is directly copied from the official oauth browser implementation from atproto: https://github.com/bluesky-social/atproto/blob/main/packages/oauth/oauth-client-browser-example/src/providers/OAuthProvider.tsx
 
 const OAuthContext = createContext<null | {
-  session: null | OAuthSession
-  isLoading: boolean
-  isSignedIn: boolean
-  signIn: (input: string) => Promise<void>
-  signOut: () => Promise<void>
-}>(null)
+  session: null | OAuthSession;
+  isLoading: boolean;
+  isSignedIn: boolean;
+  signIn: (input: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}>(null);
 
 export function OAuthProvider({
   client,
   children,
 }: PropsWithChildren<{
-  client: BrowserOAuthClient
+  client: BrowserOAuthClient;
 }>) {
-  const [initialized, setInitialized] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [session, setSession] = useState<null | OAuthSession>(null)
+  const [initialized, setInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<null | OAuthSession>(null);
 
-  const clientInitRef = useRef<typeof client>(null)
+  const clientInitRef = useRef<typeof client>(null);
 
   // Initialize by restoring the previously loaded session, if any.
   useEffect(() => {
     // In strict mode, we don't want to re-init() the client if it's the same
-    if (clientInitRef.current === client) return
-    clientInitRef.current = client
+    if (clientInitRef.current === client) return;
+    clientInitRef.current = client;
 
-    setInitialized(false)
-    setSession(null)
+    setInitialized(false);
+    setSession(null);
 
     void client
       .init(false)
       .then(async (result) => {
-        if (clientInitRef.current !== client) return
-        if (!result) return
+        if (clientInitRef.current !== client) return;
+        if (!result) return;
 
-        const { session } = result
+        const { session } = result;
 
-        setSession(session)
+        setSession(session);
 
         // If we are not back from a redirect, force an async refresh here,
         // which will cause the session to be deleted by the "deleted" event
         // handler if the refresh token was revoked
-        if (result.state === undefined) void session.getTokenInfo(true)
+        if (result.state === undefined) void session.getTokenInfo(true);
       })
       .catch((_err) => {
-        if (clientInitRef.current !== client) return
+        if (clientInitRef.current !== client) return;
       })
       .finally(() => {
-        if (clientInitRef.current !== client) return
+        if (clientInitRef.current !== client) return;
 
-        setInitialized(true)
-        setLoading(false)
-      })
-  }, [client])
+        setInitialized(true);
+        setLoading(false);
+      });
+  }, [client]);
 
   // If the current session gets deleted (e.g. from another browser tab, or
   // because a refresh token was revoked), clear it
   useEffect(() => {
-    if (!session) return
+    if (!session) return;
 
     const handleDelete = (event: CustomEvent<{ sub: string }>) => {
       if (event.detail.sub === session.did) {
-        setSession(null)
+        setSession(null);
       }
-    }
+    };
 
-    client.addEventListener('deleted', handleDelete)
+    client.addEventListener("deleted", handleDelete);
     return () => {
-      client.removeEventListener('deleted', handleDelete)
-    }
-  }, [client, session])
+      client.removeEventListener("deleted", handleDelete);
+    };
+  }, [client, session]);
 
   // When initializing the AuthProvider, we used "false" as restore's refresh
   // argument so that the app can work off-line. The following effect will
   // ensure that the session is pro actively refreshed whenever the app gets
   // back online.
   useEffect(() => {
-    if (!session) return
+    if (!session) return;
 
     // @NOTE If the refresh token was revoked, the "deleted" event will be
     // triggered on the client, causing the previous effect to clear the session
     const check = () => {
       void session.getTokenInfo(true).catch((err) => {
-        console.warn('Failed to refresh OAuth session token info:', err)
-      })
-    }
+        console.warn("Failed to refresh OAuth session token info:", err);
+      });
+    };
 
-    const interval = setInterval(check, 10 * 60e3)
-    return () => clearInterval(interval)
-  }, [session])
+    const interval = setInterval(check, 10 * 60e3);
+    return () => clearInterval(interval);
+  }, [session]);
 
   const signIn = useCallback(
     async (input: string) => {
-      setLoading(true)
+      setLoading(true);
 
       try {
         const session = await client
           .restore(input, true)
-          .catch(async (_err) => client.signIn(input))
+          .catch(async (_err) => client.signIn(input));
 
-        setSession(session)
+        setSession(session);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     },
-    [client],
-  )
+    [client]
+  );
 
   const signOut = useCallback(async () => {
     if (session) {
-      setSession(null)
-      setLoading(true)
+      setSession(null);
+      setLoading(true);
       try {
-        await session.signOut()
+        await session.signOut();
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-  }, [session])
+  }, [session]);
 
   return (
     <OAuthContext.Provider
@@ -149,17 +149,17 @@ export function OAuthProvider({
     >
       {children}
     </OAuthContext.Provider>
-  )
+  );
 }
 
 export function useOAuthContext() {
-  const value = useContext(OAuthContext)
-  if (!value) throw new Error('useOAuth must be used within an OAuthProvider')
-  return value
+  const value = useContext(OAuthContext);
+  if (!value) throw new Error("useOAuth must be used within an OAuthProvider");
+  return value;
 }
 
 export function useOAuthSession(): OAuthSession {
-  const { session } = useOAuthContext()
-  if (!session) throw new Error('User is not logged in')
-  return session
+  const { session } = useOAuthContext();
+  if (!session) throw new Error("User is not logged in");
+  return session;
 }
