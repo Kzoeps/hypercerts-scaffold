@@ -14,9 +14,11 @@ import {
 } from "@atproto/oauth-client-browser";
 import { HANDLE_RESOLVER_URL } from "@/utils/constants";
 import { buildClientMetadata } from "@/utils/oauthClient";
+import { Agent } from "@atproto/api";
 
 type OAuthContext = {
   session: OAuthSession | null;
+  atProtoAgent: Agent | null;
   isLoading: boolean;
   isSignedIn: boolean;
   signIn: (input: string) => Promise<void>;
@@ -27,6 +29,7 @@ const OAuthContext = createContext<OAuthContext | null>(null);
 export function OAuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<OAuthSession | null>(null);
+  const [atProtoAgent, setAtprotoAgent] = useState<Agent | null>(null);
 
   const clientRef = useRef<BrowserOAuthClient | null>(null);
   const initStartedRef = useRef(false);
@@ -57,6 +60,8 @@ export function OAuthProvider({ children }: PropsWithChildren) {
 
         const { session } = result;
         setSession(session);
+        const agent = new Agent(session);
+        setAtprotoAgent(agent);
 
         if (result.state === undefined) {
           void session.getTokenInfo(true);
@@ -104,13 +109,13 @@ export function OAuthProvider({ children }: PropsWithChildren) {
     if (!client) return;
     setLoading(true);
     try {
-      const s =
+      const session =
         (await client
           .restore(input, true)
           .catch(async () => client.signIn(input))) ?? null;
-      setSession(s);
-    } catch (e) {
-      console.log("Sign-in error:", e);
+      setSession(session);
+    } catch (error) {
+      console.log("Sign-in error:", error);
     } finally {
       setLoading(false);
     }
@@ -131,6 +136,7 @@ export function OAuthProvider({ children }: PropsWithChildren) {
     <OAuthContext.Provider
       value={{
         session,
+        atProtoAgent,
         isLoading: loading,
         isSignedIn: !!session,
         signIn,

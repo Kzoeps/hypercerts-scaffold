@@ -1,0 +1,3 @@
+[submodule "hypercerts-lexicon"]
+	path = hypercerts-lexicon
+	url = git@github.com:hypercerts-org/hypercerts-lexicon.git
