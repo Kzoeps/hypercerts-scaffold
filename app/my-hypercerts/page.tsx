@@ -33,7 +33,6 @@ export default function MyHypercertsPage() {
         });
 
         const records = response.data.records.map((record) => {
-          console.log(record);
           return { uri: record.uri, ...record.value } as Hypercert & {
             uri: string;
           };

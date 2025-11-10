@@ -21,12 +21,12 @@ export function getImageURL(
 
   // case 3: object with ref (BlobRef)
   if (blobRef && "ref" in blobRef && "ref" in blobRef.original) {
-    const cid = blobRef.original?.ref?.$link ?? undefined;
+    const cid = blobRef.ref ?? undefined;
     if (!did || !cid) return undefined;
 
-    const url = `${PDS_URL}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(
+    const url = `${PDS_URL}xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(
       did
-    )}&cid=${encodeURIComponent(cid)}`;
+    )}&cid=${encodeURIComponent(cid as string)}`;
     console.log(url);
     return url;
   }

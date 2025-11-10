@@ -1,6 +1,5 @@
 "use client";
 
-import { useAtprotoClient } from "@/lib/use-atproto-client";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { redirect, useParams } from "next/navigation";
 import { useEffect } from "react";
@@ -22,7 +21,6 @@ export default function EditHypercertIdPage() {
         collection: "org.hypercerts.claim.record",
         rkey: hypercertId,
       });
-      console.log(record);
     }
     fetchHypercert();
   }, [atProtoAgent, hypercertId]);
