@@ -14,12 +14,13 @@ import {
 
 export interface DatePickerProps {
   label: string;
+  initDate?: Date | undefined;
   onChange: (date: Date) => void;
 }
 
-export function DatePicker({ label, onChange }: DatePickerProps) {
+export function DatePicker({ label, onChange, initDate }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [date, setDate] = React.useState<Date | undefined>(undefined);
+  const [date, setDate] = React.useState<Date | undefined>(initDate);
 
   return (
     <div className="flex flex-col gap-3">
