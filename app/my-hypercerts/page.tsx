@@ -2,7 +2,7 @@
 
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import Image from "next/image";
-import { Record as Hypercert } from "@/lexicons/types/org/hypercerts/claim/record";
+import { Record as Hypercert } from "@/lexicons/types/org/hypercerts/claim";
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -12,8 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getImageURL } from "@/lib/utils";
+import { getImageURL, parseAtUri } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function MyHypercertsPage() {
   const { atProtoAgent, session } = useOAuthContext();
@@ -28,7 +29,7 @@ export default function MyHypercertsPage() {
       try {
         const response = await atProtoAgent.com.atproto.repo.listRecords({
           repo: atProtoAgent.assertDid,
-          collection: "org.hypercerts.claim.record",
+          collection: "org.hypercerts.claim",
           limit: 100,
         });
 
@@ -56,28 +57,35 @@ export default function MyHypercertsPage() {
           <p>No hypercerts found.</p>
         ) : (
           <div className="flex flex-col gap-4">
-            {hypercerts.map((cert, index) => {
+            {hypercerts.map((cert) => {
               return (
-                <Card key={cert.uri}>
-                  <CardHeader>
-                    <CardTitle>{cert?.title}</CardTitle>
-                    <CardDescription>{cert?.shortDescription}</CardDescription>
-                    <CardAction>
-                      <Button>Edit</Button>
-                    </CardAction>
-                  </CardHeader>
-                  <CardContent>
-                    {!!getImageURL(cert?.image, session?.did) && (
-                      <div className="relative aspect-square max-w-md">
-                        <Image
-                          fill
-                          alt="cover image"
-                          src={getImageURL(cert?.image, session?.did)!}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <Link
+                  key={cert.uri}
+                  href={`/${parseAtUri(cert.uri)?.rkey || ""}`}
+                >
+                  <Card key={cert.uri}>
+                    <CardHeader>
+                      <CardTitle>{cert?.title}</CardTitle>
+                      <CardDescription>
+                        {cert?.shortDescription}
+                      </CardDescription>
+                      <CardAction>
+                        <Button>Edit</Button>
+                      </CardAction>
+                    </CardHeader>
+                    <CardContent>
+                      {!!getImageURL(cert?.image, session?.did) && (
+                        <div className="relative aspect-square max-w-md">
+                          <Image
+                            fill
+                            alt="cover image"
+                            src={getImageURL(cert?.image, session?.did)!}
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
               );
             })}
           </div>
