@@ -142,7 +142,6 @@ export default function HypercertContributionForm({
       const updatedHypercert = {
         ...hypercertRecord,
         contributions: [
-          ...(hypercertRecord?.contributions || []),
           {
             $type: "com.atproto.repo.strongRef",
             cid: contributionCid,
