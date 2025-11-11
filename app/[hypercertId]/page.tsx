@@ -10,43 +10,11 @@ import type * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim";
 import HypercertDetailsForm from "@/components/hypercerts-detail-form";
 import HypercertContributionForm from "@/components/contributions-form";
 import { ComAtprotoRepoGetRecord } from "@atproto/api";
-
-function StepperHeader({ step }: { step: 1 | 2 }) {
-  const steps = [
-    { id: 1, label: "Hypercert Details" },
-    { id: 2, label: "Contributions" },
-  ];
-  return (
-    <div className="flex items-center justify-center gap-6 my-6">
-      {steps.map((s, idx) => (
-        <div key={s.id} className="flex items-center gap-2">
-          <div
-            className={`h-8 w-8 rounded-full grid place-items-center text-sm font-medium ${
-              step === s.id ? "bg-primary text-primary-foreground" : "bg-muted"
-            }`}
-          >
-            {s.id}
-          </div>
-          <span
-            className={`text-sm ${
-              step === s.id ? "font-semibold" : "text-muted-foreground"
-            }`}
-          >
-            {s.label}
-          </span>
-          {idx < steps.length - 1 && (
-            <div className="w-10 h-1.5 bg-border mx-2" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+import { StepperHeader } from "@/components/edit-cert-stepper";
 
 export type CertData = Omit<ComAtprotoRepoGetRecord.OutputSchema, "value"> & {
   value: HypercertRecord.Record;
 };
-
 export default function EditHypercertIdPage() {
   const params = useParams<{ hypercertId: string }>();
   const hypercertId = params.hypercertId;
@@ -57,14 +25,12 @@ export default function EditHypercertIdPage() {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
 
-  // Redirect if auth missing
   useEffect(() => {
     if (!atProtoAgent || !session || !hypercertId) {
       router.push("/");
     }
   }, [atProtoAgent, session, hypercertId, router]);
 
-  // Fetch original record
   useEffect(() => {
     let cancelled = false;
     async function fetchHypercert() {
@@ -115,7 +81,6 @@ export default function EditHypercertIdPage() {
           hypercertId={hypercertId}
           initialRecord={certData?.value}
           onSaved={({ advance }) => {
-            // When the child successfully saves, decide whether to advance
             if (advance) {
               setStep(2);
             } else {
@@ -127,7 +92,6 @@ export default function EditHypercertIdPage() {
 
       {step === 2 && (
         <div className="mt-6">
-          {/* optional: a compact summary of the main record above the form */}
           <HypercertContributionForm
             hypercertId={hypercertId}
             hypercertData={certData}
