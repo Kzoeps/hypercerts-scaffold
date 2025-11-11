@@ -61,3 +61,12 @@ export const validateContribution = (data: unknown) => {
     }
   }
 };
+
+export function parseAtUri(atUri?: string) {
+  // at://did:plc:xyz/app.namespace.record/abc123
+  if (!atUri) return;
+  if (!atUri.startsWith("at://")) return;
+  const [did, collection, rkey] = atUri.slice("at://".length).split("/");
+  if (!did || !collection || !rkey) return;
+  return { did, collection, rkey };
+}

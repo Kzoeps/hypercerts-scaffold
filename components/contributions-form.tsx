@@ -1,4 +1,4 @@
-import { FormEventHandler, useState } from "react";
+import { FormEventHandler, useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,7 +16,11 @@ import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import * as Contribution from "@/lexicons/types/org/hypercerts/claim/contribution";
 import { toast } from "sonner";
 import { CertData } from "@/app/[hypercertId]/page";
-import { validateContribution, validateHypercert } from "@/lib/utils";
+import {
+  parseAtUri,
+  validateContribution,
+  validateHypercert,
+} from "@/lib/utils";
 
 export default function HypercertContributionForm({
   hypercertId,
@@ -63,6 +67,23 @@ export default function HypercertContributionForm({
     });
     return response;
   };
+  useEffect(() => {
+    async function fetchContributionData() {
+      if (!atProtoAgent || !hypercertRecord) return;
+      const contributionLocation = parseAtUri(
+        hypercertRecord?.contributions?.[0]?.uri
+      );
+      if (contributionLocation) {
+        const response = await atProtoAgent.com.atproto.repo.getRecord({
+          repo: atProtoAgent.assertDid,
+          collection: "org.hypercerts.claim.contribution",
+          rkey: contributionLocation.rkey,
+        });
+        console.log("Fetched contribution data:", response.data);
+      }
+    }
+    fetchContributionData();
+  }, [hypercertRecord, atProtoAgent]);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
