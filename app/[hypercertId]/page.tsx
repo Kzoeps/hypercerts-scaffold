@@ -1,174 +1,140 @@
 "use client";
 
-import HypercertContributionForm from "@/components/contributions-form";
-import { DatePicker } from "@/components/date-range-picker";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
-import { Record } from "@/lexicons/types/org/hypercerts/claim/record";
-import { useOAuthContext } from "@/providers/OAuthProviderSSR";
-import { Label } from "@radix-ui/react-label";
-import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
+import { useOAuthContext } from "@/providers/OAuthProviderSSR";
+import type * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim";
+
+import HypercertDetailsForm from "@/components/hypercerts-detail-form";
+import HypercertContributionForm from "@/components/contributions-form";
+
+// Simple stepper header (you can swap for shadcn/ui primitives if you prefer)
+function StepperHeader({ step }: { step: 1 | 2 }) {
+  const steps = [
+    { id: 1, label: "Hypercert Details" },
+    { id: 2, label: "Contributions" },
+  ];
+  return (
+    <div className="flex items-center justify-center gap-6 my-6">
+      {steps.map((s, idx) => (
+        <div key={s.id} className="flex items-center gap-2">
+          <div
+            className={`h-8 w-8 rounded-full grid place-items-center text-sm font-medium ${
+              step === s.id ? "bg-primary text-primary-foreground" : "bg-muted"
+            }`}
+          >
+            {s.id}
+          </div>
+          <span
+            className={`text-sm ${
+              step === s.id ? "font-semibold" : "text-muted-foreground"
+            }`}
+          >
+            {s.label}
+          </span>
+          {idx < steps.length - 1 && (
+            <div className="w-10 h-[2px] bg-border mx-2" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function EditHypercertIdPage() {
   const params = useParams<{ hypercertId: string }>();
   const hypercertId = params.hypercertId;
   const router = useRouter();
-
   const { atProtoAgent, session } = useOAuthContext();
 
-  const [originalRecord, setOriginalRecord] = useState<Record>();
-  const [title, setTitle] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [workScope, setWorkScope] = useState("");
-  const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date | null>(null);
-  const [workTimeframeTo, setWorkTimeframeTo] = useState<Date | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [originalRecord, setOriginalRecord] =
+    useState<HypercertRecord.Record>();
   const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState<1 | 2>(1);
 
+  // Redirect if auth missing
   useEffect(() => {
+    if (!atProtoAgent || !session || !hypercertId) {
+      router.push("/");
+    }
+  }, [atProtoAgent, session, hypercertId, router]);
+
+  // Fetch original record
+  useEffect(() => {
+    let cancelled = false;
     async function fetchHypercert() {
+      if (!atProtoAgent || !hypercertId) return;
+      setLoading(true);
       try {
-        const response = await atProtoAgent?.com.atproto.repo.getRecord({
+        const response = await atProtoAgent.com.atproto.repo.getRecord({
           repo: atProtoAgent.assertDid,
-          collection: "org.hypercerts.claim.record",
+          collection: "org.hypercerts.claim",
           rkey: hypercertId,
         });
-        const record = response?.data?.value as Record;
-        setOriginalRecord(record);
-
-        if (record) {
-          setTitle(record.title || "");
-          setShortDescription(record.shortDescription || "");
-          setWorkScope(record.workScope || "");
-          setWorkTimeframeFrom(
-            record.workTimeframeFrom ? new Date(record.workTimeframeFrom) : null
-          );
-          setWorkTimeframeTo(
-            record.workTimeFrameTo ? new Date(record.workTimeFrameTo) : null
-          );
-        }
+        const record = response?.data?.value as
+          | HypercertRecord.Record
+          | undefined;
+        if (!cancelled) setOriginalRecord(record);
       } catch (error) {
         console.error("Error fetching hypercert:", error);
         toast.error("Failed to load hypercert");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchHypercert();
+    return () => {
+      cancelled = true;
+    };
   }, [atProtoAgent, hypercertId]);
-
-  if (!atProtoAgent || !session || !hypercertId) {
-    router.push("/");
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (!atProtoAgent || !session) return;
-      setSaving(true);
-
-      const record = {
-        $type: "org.hypercerts.claim.record",
-        title,
-        shortDescription,
-        workScope,
-        workTimeframeFrom: workTimeframeFrom?.toISOString() || null,
-        workTimeFrameTo: workTimeframeTo?.toISOString() || null,
-        createdAt: new Date().toISOString(),
-      };
-
-      await atProtoAgent.com.atproto.repo.putRecord({
-        repo: atProtoAgent.assertDid,
-        collection: "org.hypercerts.claim.record",
-        rkey: hypercertId,
-        record,
-      });
-
-      toast.success("Hypercert updated successfully!");
-    } catch (error) {
-      console.error("Error updating hypercert:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update hypercert"
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <Spinner />
       </div>
     );
   }
 
+  // Guard: in case fetch failed
+  if (!originalRecord) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-2">
+        <p className="text-muted-foreground">No record found.</p>
+      </div>
+    );
+  }
+
   return (
-    <HypercertContributionForm
-      record={originalRecord}
-      hypercertId={hypercertId}
-    />
-  );
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <StepperHeader step={step} />
 
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 max-w-md mx-auto py-10"
-    >
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="title">Hypercert Name</Label>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter the hypercert name"
-          required
+      {step === 1 && (
+        <HypercertDetailsForm
+          hypercertId={hypercertId}
+          initialRecord={originalRecord}
+          onSaved={({ advance }) => {
+            // When the child successfully saves, decide whether to advance
+            if (advance) {
+              setStep(2);
+            } else {
+              toast.success("Saved!");
+            }
+          }}
         />
-      </div>
+      )}
 
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="description">Short Description</Label>
-        <Textarea
-          id="description"
-          value={shortDescription}
-          onChange={(e) => setShortDescription(e.target.value)}
-          placeholder="Enter a short description"
-          required
-        />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="workScope">Work Scope Tags</Label>
-        <Textarea
-          id="workScope"
-          value={workScope}
-          onChange={(e) => setWorkScope(e.target.value)}
-          placeholder="Enter tags that describe the work"
-          required
-        />
-      </div>
-
-      <div className="flex justify-between w-full">
-        <DatePicker
-          initDate={workTimeframeFrom || undefined}
-          onChange={setWorkTimeframeFrom}
-          label="Work Time Frame From"
-        />
-        <DatePicker
-          onChange={setWorkTimeframeTo}
-          initDate={workTimeframeTo || undefined}
-          label="Work Time Frame To"
-        />
-      </div>
-
-      <Button disabled={saving} type="submit">
-        {saving && <Spinner />}
-        {saving ? "Saving Changes" : "Save Changes"}
-      </Button>
-    </form>
+      {step === 2 && (
+        <div className="mt-6">
+          {/* optional: a compact summary of the main record above the form */}
+          <HypercertContributionForm
+            hypercertId={hypercertId}
+            record={originalRecord}
+          />
+        </div>
+      )}
+    </div>
   );
 }

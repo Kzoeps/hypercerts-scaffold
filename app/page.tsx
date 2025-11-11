@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { Label } from "@radix-ui/react-label";
 import { FormEventHandler, useState } from "react";
-import * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim/record";
+import * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim";
 import { BlobRef } from "@atproto/lexicon";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
@@ -34,12 +34,12 @@ export default function Home() {
         uploadedBlob = response.data.blob;
       }
       const record = {
-        $type: "org.hypercerts.claim.record",
+        $type: "org.hypercerts.claim",
         title,
         shortDescription,
         workScope,
         image: uploadedBlob ? { $type: "smallBlob", ...uploadedBlob } : null,
-        workTimeframeFrom: workTimeframeFrom?.toISOString() || null,
+        workTimeFrameFrom: workTimeframeFrom?.toISOString() || null,
         workTimeFrameTo: workTimeframeTo?.toISOString() || null,
         createdAt: new Date().toISOString(),
       };
@@ -50,7 +50,7 @@ export default function Home() {
         await atProtoAgent.com.atproto.repo.createRecord({
           rkey: new Date().getTime().toString(),
           record,
-          collection: "org.hypercerts.claim.record",
+          collection: "org.hypercerts.claim",
           repo: atProtoAgent.assertDid,
         });
         toast.success("Hypercert created successfully!");

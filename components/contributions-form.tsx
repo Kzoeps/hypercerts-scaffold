@@ -14,7 +14,7 @@ import { Plus, X } from "lucide-react";
 import { DatePicker } from "./date-range-picker";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import * as Contribution from "@/lexicons/types/org/hypercerts/claim/contribution";
-import * as HypercerRecord from "@/lexicons/types/org/hypercerts/claim/record";
+import * as HypercerRecord from "@/lexicons/types/org/hypercerts/claim";
 import { toast } from "sonner";
 
 export default function HypercertContributionForm({
@@ -90,7 +90,7 @@ export default function HypercertContributionForm({
             {
               rkey: hypercertId,
               repo: atProtoAgent.assertDid,
-              collection: "org.hypercerts.claim.record",
+              collection: "org.hypercerts.claim",
               record: updatedHypercert,
             }
           );
