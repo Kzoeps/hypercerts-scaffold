@@ -1,5 +1,6 @@
 "use client";
 
+import HypercertContributionForm from "@/components/contributions-form";
 import { DatePicker } from "@/components/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ export default function EditHypercertIdPage() {
 
   const { atProtoAgent, session } = useOAuthContext();
 
+  const [originalRecord, setOriginalRecord] = useState<Record>();
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [workScope, setWorkScope] = useState("");
@@ -35,8 +37,8 @@ export default function EditHypercertIdPage() {
           collection: "org.hypercerts.claim.record",
           rkey: hypercertId,
         });
-        console.log(response);
         const record = response?.data?.value as Record;
+        setOriginalRecord(record);
 
         if (record) {
           setTitle(record.title || "");
@@ -104,6 +106,13 @@ export default function EditHypercertIdPage() {
       </div>
     );
   }
+
+  return (
+    <HypercertContributionForm
+      record={originalRecord}
+      hypercertId={hypercertId}
+    />
+  );
 
   return (
     <form
