@@ -86,25 +86,18 @@ export default function HypercertContributionForm({
           HypercerRecord.isRecord(updatedHypercert) &&
           HypercerRecord.validateRecord(updatedHypercert)
         ) {
+          const updateResponse = await atProtoAgent?.com.atproto.repo.putRecord(
+            {
+              rkey: hypercertId,
+              repo: atProtoAgent.assertDid,
+              collection: "org.hypercerts.claim.record",
+              record: updatedHypercert,
+            }
+          );
+          console.log(updateResponse);
           toast.success("Contribution created and linked successfully!");
         }
 
-        // const updateResponse = await atProtoAgent?.com.atproto.repo.putRecord({
-        //   rkey: hypercertId,
-        //   repo: atProtoAgent.assertDid,
-        //   collection: "org.hypercerts.claim.record",
-        //   record: {
-        //     ...record,
-        //     contributions: [
-        //       ...(record.contributions || []),
-        //       {
-        //         $type: "com.atproto.repo.strongRef",
-        //         cid: contributionCid!,
-        //         uri: contributionURI!,
-        //       },
-        //     ],
-        //   },
-        // });
         toast.success("Contribution created successfully!");
       } catch (error) {
         console.error("Error creating contribution:", error);
