@@ -15,9 +15,11 @@ import {
 import { getImageURL, parseAtUri } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function MyHypercertsPage() {
   const { atProtoAgent, session } = useOAuthContext();
+  const router = useRouter();
   const [hypercerts, setMyHypercerts] = useState<
     (Hypercert & { uri: string })[]
   >([]);
@@ -70,7 +72,15 @@ export default function MyHypercertsPage() {
                         {cert?.shortDescription}
                       </CardDescription>
                       <CardAction>
-                        <Button>Edit</Button>
+                        <Button
+                          onClick={() => {
+                            router.push(
+                              `/${parseAtUri(cert.uri)?.rkey || ""}/edit`
+                            );
+                          }}
+                        >
+                          Edit
+                        </Button>
                       </CardAction>
                     </CardHeader>
                     <CardContent>
