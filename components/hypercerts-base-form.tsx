@@ -6,14 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { FormEventHandler, useState } from "react";
+import { FormEventHandler, useEffect, useState } from "react";
+import * as Hypercert from "@/lexicons/types/org/hypercerts/claim";
 
 export interface HypercertsBaseFormProps {
   isSaving: boolean;
   saveDisabled: boolean;
-  onSave?: (record: HypercertRecordForm, advance: boolean) => void;
-  onCreate?: (record: HypercertRecordForm) => void;
+  onSave?: (record: HypercertRecordForm, advance?: boolean) => void;
   updateActions?: boolean;
+  certInfo?: Hypercert.Record;
 }
 
 export interface HypercertRecordForm {
@@ -30,15 +31,22 @@ export default function HypercertsBaseForm({
   isSaving,
   saveDisabled,
   onSave,
-  onCreate,
   updateActions,
+  certInfo,
 }: HypercertsBaseFormProps) {
-  const [title, setTitle] = useState("");
+  console.log(certInfo, "CERTT INFO");
+  const [title, setTitle] = useState(certInfo?.title || "");
   const [file, setFile] = useState<File | undefined>();
-  const [shortDescription, setShortDescription] = useState("");
-  const [workScope, setWorkScope] = useState("");
-  const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date | null>(null);
-  const [workTimeframeTo, setWorkTimeframeTo] = useState<Date | null>(null);
+  const [shortDescription, setShortDescription] = useState(
+    certInfo?.shortDescription || ""
+  );
+  const [workScope, setWorkScope] = useState(certInfo?.workScope);
+  const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date | null>(
+    certInfo?.workTimeFrameFrom ? new Date(certInfo?.workTimeFrameFrom) : null
+  );
+  const [workTimeframeTo, setWorkTimeframeTo] = useState<Date | null>(
+    certInfo?.workTimeFrameTo ? new Date(certInfo?.workTimeFrameTo) : null
+  );
 
   const getRecord = () => {
     if (
@@ -68,11 +76,7 @@ export default function HypercertsBaseForm({
     e.preventDefault();
     const record = getRecord();
     if (!record) return;
-    if (onCreate) {
-      onCreate?.(record);
-    } else if (onSave) {
-      onSave?.(record, false);
-    }
+    onSave?.(record, false);
   };
   const handleSaveAndContinue = () => {
     const record = getRecord();
@@ -89,6 +93,7 @@ export default function HypercertsBaseForm({
         <Input
           id="title"
           onChange={(e) => setTitle(e.target.value)}
+          value={title}
           placeholder="Enter the hypercert name"
           required
         ></Input>
@@ -98,6 +103,7 @@ export default function HypercertsBaseForm({
         <Textarea
           onChange={(e) => setShortDescription(e.target.value)}
           id="description"
+          value={shortDescription}
           placeholder="Enter a short description"
           required
         ></Textarea>
@@ -115,6 +121,7 @@ export default function HypercertsBaseForm({
         <Label htmlFor="workScope">Work Scope Tags</Label>
         <Textarea
           onChange={(e) => setWorkScope(e.target.value)}
+          value={workScope}
           id="workScope"
           placeholder="Enter tags that describe the work"
           required

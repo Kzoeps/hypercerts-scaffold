@@ -75,7 +75,7 @@ export default function Home() {
     <HypercertsBaseForm
       isSaving={creating}
       saveDisabled={false}
-      onCreate={handleCreate}
+      onSave={handleCreate}
     />
   );
 }

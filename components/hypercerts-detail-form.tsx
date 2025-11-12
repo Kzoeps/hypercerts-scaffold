@@ -1,11 +1,5 @@
 "use client";
 
-import { DatePicker } from "@/components/date-range-picker";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -29,7 +23,7 @@ export default function HypercertDetailsForm({
   const { atProtoAgent } = useOAuthContext();
   const [saving, setSaving] = useState(false);
 
-  async function saveRecord(certInfo: HypercertRecordForm, advance: boolean) {
+  async function saveRecord(certInfo: HypercertRecordForm, advance?: boolean) {
     if (!atProtoAgent) return;
     const {
       title,
@@ -64,7 +58,7 @@ export default function HypercertDetailsForm({
           record,
         });
         toast.success("Hypercert saved");
-        onSaved?.({ advance });
+        onSaved?.({ advance: !!advance });
       } else {
         const validation = HypercertRecord.validateRecord(record);
         if (!validation.success) {
@@ -86,8 +80,9 @@ export default function HypercertDetailsForm({
   return (
     <HypercertsBaseForm
       onSave={saveRecord}
-      isSaving={false}
+      isSaving={saving}
       saveDisabled={false}
+      certInfo={initialRecord}
     />
   );
 }
