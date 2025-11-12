@@ -1,29 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
-import type * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import ContributionsView from "@/components/hypercert-contribution-view";
+import HypercertDetailsView from "@/components/hypercert-detail-view";
+import { HypercertRecordData } from "@/lib/types";
 
-import HypercertDetailsForm from "@/components/hypercerts-detail-form";
-import HypercertContributionForm from "@/components/contributions-form";
-import { ComAtprotoRepoGetRecord } from "@atproto/api";
-import { StepperHeader } from "@/components/edit-cert-stepper";
-
-export type CertData = Omit<ComAtprotoRepoGetRecord.OutputSchema, "value"> & {
-  value: HypercertRecord.Record;
-};
-export default function EditHypercertIdPage() {
+export default function HypercertDetailsPage() {
   const params = useParams<{ hypercertId: string }>();
   const hypercertId = params.hypercertId;
   const router = useRouter();
   const { atProtoAgent, session } = useOAuthContext();
-  const [certData, setCertData] = useState<CertData>();
 
+  const [certData, setCertData] = useState<HypercertRecordData>();
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState<1 | 2>(1);
 
   useEffect(() => {
     if (!atProtoAgent || !session || !hypercertId) {
@@ -42,7 +36,7 @@ export default function EditHypercertIdPage() {
           collection: "org.hypercerts.claim",
           rkey: hypercertId,
         });
-        setCertData(response?.data as CertData);
+        if (!cancelled) setCertData(response?.data as HypercertRecordData);
       } catch (error) {
         console.error("Error fetching hypercert:", error);
         toast.error("Failed to load hypercert");
@@ -73,32 +67,24 @@ export default function EditHypercertIdPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      <StepperHeader step={step} />
+    <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl">Hypercert Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <HypercertDetailsView hypercertData={certData} />
+        </CardContent>
+      </Card>
 
-      {step === 1 && (
-        <HypercertDetailsForm
-          hypercertId={hypercertId}
-          initialRecord={certData?.value}
-          onSaved={({ advance }) => {
-            if (advance) {
-              setStep(2);
-            } else {
-              toast.success("Saved!");
-            }
-          }}
-        />
-      )}
-
-      {step === 2 && (
-        <div className="mt-6">
-          <HypercertContributionForm
-            hypercertId={hypercertId}
-            hypercertData={certData}
-            onBack={() => setStep(1)}
-          />
-        </div>
-      )}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl">Contributions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ContributionsView hypercertData={certData} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

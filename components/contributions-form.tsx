@@ -15,7 +15,7 @@ import { DatePicker } from "./date-range-picker";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import * as Contribution from "@/lexicons/types/org/hypercerts/claim/contribution";
 import { toast } from "sonner";
-import { CertData } from "@/app/[hypercertId]/page";
+import { HypercertRecordData } from "@/lib/types";
 import {
   parseAtUri,
   validateContribution,
@@ -29,7 +29,7 @@ export default function HypercertContributionForm({
   onBack,
 }: {
   hypercertId: string;
-  hypercertData?: CertData;
+  hypercertData?: HypercertRecordData;
   onBack?: () => void;
 }) {
   const { atProtoAgent } = useOAuthContext();
