@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, FormEventHandler } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,73 +11,96 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import * as HypercertClaim from "@/lexicons/types/org/hypercerts/claim";
 import * as Evidence from "@/lexicons/types/org/hypercerts/claim/evidence";
-import { HypercertRecordData } from "@/lib/types";
-import { validateHypercert } from "@/lib/utils";
+import { createEvidence, getHypercert, updateHypercert } from "@/lib/queries";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
-import { ArrowLeft, Upload, Link as LinkIcon } from "lucide-react";
+import {
+  ComAtprotoRepoCreateRecord
+} from "@atproto/api";
+import { ArrowLeft, Link as LinkIcon, Upload } from "lucide-react";
+import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
-import { getHypercert } from "@/lib/queries";
 
 type ContentMode = "link" | "file";
 
 export default function HypercertEvidenceForm({
   hypercertId,
-  hypercertData,
   onNext,
   onBack,
 }: {
   hypercertId: string;
-  hypercertData?: HypercertRecordData;
   onNext?: () => void;
   onBack?: () => void;
 }) {
   const { atProtoAgent } = useOAuthContext();
-  const hypercertRecord = hypercertData?.value;
 
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
-  const [contentMode, setContentMode] = useState<ContentMode>("link");
-  const [contentUrl, setContentUrl] = useState("");
-  const [contentFile, setContentFile] = useState<File | null>(null);
+  const [evidenceMode, setEvidenceMode] = useState<ContentMode>("link");
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0];
-    setContentFile(file ?? null);
+    setEvidenceFile(file ?? null);
+  };
+
+  const getEvidenceContent = async () => {
+    if (evidenceMode === "link") {
+      if (!evidenceUrl.trim()) {
+        toast.error("Please provide a link to the evidence.");
+        setSaving(false);
+        return;
+      }
+      return { $type: "app.certified.defs#uri", value: evidenceUrl.trim() };
+    } else {
+      if (!evidenceFile) {
+        toast.error("Please upload an evidence file.");
+        setSaving(false);
+        return;
+      }
+      const blob = new Blob([evidenceFile], { type: evidenceFile.type });
+      const response = await atProtoAgent!.com.atproto.repo.uploadBlob(blob);
+      const uploadedBlob = response.data.blob;
+      return { $type: "smallBlob", ...uploadedBlob };
+    }
+  };
+
+  const buildUpdatedHyperCert = async (
+    evidenceData: ComAtprotoRepoCreateRecord.Response
+  ) => {
+    const evidenceCid = evidenceData?.data?.cid;
+    const evidenceURI = evidenceData?.data?.uri;
+
+    if (!evidenceCid || !evidenceURI) {
+      toast.error("Failed to create evidence record");
+      setSaving(false);
+      return;
+    }
+
+    const hypercertData = await getHypercert(hypercertId, atProtoAgent!);
+    const updatedHypercert = {
+      ...hypercertData.data.value,
+      evidence: [
+        {
+          $type: "com.atproto.repo.strongRef",
+          cid: evidenceCid,
+          uri: evidenceURI,
+        },
+      ],
+    };
+    return updatedHypercert;
   };
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (!atProtoAgent) return;
-    if (!hypercertRecord) {
-      toast.error("Hypercert data not loaded");
-      return;
-    }
-
     try {
       setSaving(true);
-      let content: Evidence.Record["content"];
-      if (contentMode === "link") {
-        if (!contentUrl.trim()) {
-          toast.error("Please provide a link to the evidence.");
-          setSaving(false);
-          return;
-        }
-        content = { $type: "app.certified.defs#uri", value: contentUrl.trim() };
-      } else {
-        if (!contentFile) {
-          toast.error("Please upload an evidence file.");
-          setSaving(false);
-          return;
-        }
-        const blob = new Blob([contentFile], { type: contentFile.type });
-        const response = await atProtoAgent.com.atproto.repo.uploadBlob(blob);
-        const uploadedBlob = response.data.blob;
-        content = { $type: "smallBlob", ...uploadedBlob };
-      }
-
+      const content = await getEvidenceContent();
       const evidenceRecord = {
         $type: "org.hypercerts.claim.evidence",
         content,
@@ -86,8 +108,7 @@ export default function HypercertEvidenceForm({
         shortDescription,
         description: description || undefined,
         createdAt: new Date().toISOString(),
-      };
-
+      } as Evidence.Record;
       const validation = Evidence.validateRecord(evidenceRecord);
       if (!validation.success) {
         toast.error(validation.error?.message || "Invalid evidence record");
@@ -95,50 +116,14 @@ export default function HypercertEvidenceForm({
         return;
       }
 
-      const createResponse = await atProtoAgent.com.atproto.repo.createRecord({
-        rkey: String(Date.now()),
-        record: evidenceRecord,
-        collection: "org.hypercerts.claim.evidence",
-        repo: atProtoAgent.assertDid,
-      });
-
-      const evidenceCid = createResponse?.data?.cid;
-      const evidenceURI = createResponse?.data?.uri;
-
-      if (!evidenceCid || !evidenceURI) {
-        toast.error("Failed to create evidence record");
-        setSaving(false);
-        return;
-      }
-
-      const hypercertData = await getHypercert(hypercertId, atProtoAgent);
-      const updatedHypercert = {
-        ...hypercertData.data.value,
-        evidence: [
-          {
-            $type: "com.atproto.repo.strongRef",
-            cid: evidenceCid,
-            uri: evidenceURI,
-          },
-        ],
-      };
-
-      const hypercertValidation = validateHypercert(updatedHypercert);
-      if (!hypercertValidation.success) {
-        toast.error(
-          hypercertValidation.error || "Invalid updated hypercert record"
-        );
-        setSaving(false);
-        return;
-      }
-
-      await atProtoAgent.com.atproto.repo.putRecord({
-        rkey: hypercertId,
-        repo: atProtoAgent.assertDid,
-        collection: "org.hypercerts.claim",
-        record: updatedHypercert,
-      });
-
+      const createResponse = await createEvidence(atProtoAgent, evidenceRecord);
+      const updatedHypercert = await buildUpdatedHyperCert(createResponse);
+      if (!updatedHypercert) return;
+      await updateHypercert(
+        hypercertId,
+        atProtoAgent,
+        updatedHypercert as HypercertClaim.Record
+      );
       toast.success("Evidence created and linked to hypercert!");
       onNext?.();
     } catch (error) {
@@ -224,11 +209,11 @@ export default function HypercertEvidenceForm({
                   <button
                     type="button"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm ${
-                      contentMode === "link"
+                      evidenceMode === "link"
                         ? "bg-primary text-primary-foreground"
                         : "bg-background"
                     }`}
-                    onClick={() => setContentMode("link")}
+                    onClick={() => setEvidenceMode("link")}
                   >
                     <LinkIcon className="h-4 w-4" />
                     Link
@@ -236,23 +221,23 @@ export default function HypercertEvidenceForm({
                   <button
                     type="button"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm ${
-                      contentMode === "file"
+                      evidenceMode === "file"
                         ? "bg-primary text-primary-foreground"
                         : "bg-background"
                     }`}
-                    onClick={() => setContentMode("file")}
+                    onClick={() => setEvidenceMode("file")}
                   >
                     <Upload className="h-4 w-4" />
                     File
                   </button>
                 </div>
 
-                {contentMode === "link" ? (
+                {evidenceMode === "link" ? (
                   <div className="space-y-2">
                     <Input
                       type="url"
                       placeholder="https://example.com/report"
-                      onChange={(e) => setContentUrl(e.target.value)}
+                      onChange={(e) => setEvidenceUrl(e.target.value)}
                       required
                     />
                     <p className="text-xs text-muted-foreground">

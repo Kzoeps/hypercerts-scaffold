@@ -17,5 +17,7 @@ export type HypercertContributionData = Omit<
 };
 
 export enum Collections {
-  claim = "org.hypercerts.claim"
+  claim = "org.hypercerts.claim",
+  contribution = "org.hypercerts.claim.contribution",
+  evidence = "org.hypercerts.claim.evidence",
 }

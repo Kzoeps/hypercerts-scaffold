@@ -10,40 +10,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import * as Contribution from "@/lexicons/types/org/hypercerts/claim/contribution";
-import { HypercertRecordData } from "@/lib/types";
+import * as Claim from "@/lexicons/types/org/hypercerts/claim";
 import {
-  parseAtUri,
-  validateContribution,
-  validateHypercert,
-} from "@/lib/utils";
+  createContribution,
+  getHypercert,
+  updateHypercert,
+} from "@/lib/queries";
+import { validateContribution, validateHypercert } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
+import { ComAtprotoRepoGetRecord } from "@atproto/api";
 import { ArrowLeft, Plus, X } from "lucide-react";
-import { FormEventHandler, useEffect, useState } from "react";
+import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import { DatePicker } from "./date-range-picker";
 import { Spinner } from "./ui/spinner";
 
 export default function HypercertContributionForm({
   hypercertId,
-  hypercertData,
   onBack,
   onSkip,
 }: {
   hypercertId: string;
-  hypercertData?: HypercertRecordData;
   onBack?: () => void;
   onSkip?: () => void;
 }) {
   const { atProtoAgent } = useOAuthContext();
-
-  const hypercertRef = {
-    $type: "com.atproto.repo.strongRef",
-    uri: hypercertData?.uri,
-    cid: hypercertData?.cid,
-  };
-
-  const hypercertRecord = hypercertData?.value;
-
   const [role, setRole] = useState("");
   const [contributors, setContributors] = useState([""]);
   const [description, setDescription] = useState("");
@@ -52,48 +43,48 @@ export default function HypercertContributionForm({
   const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    async function fetchContributionData() {
-      if (!atProtoAgent || !hypercertRecord?.contributions?.length) return;
+  // useEffect(() => {
+  //   async function fetchContributionData() {
+  //     if (!atProtoAgent || !hypercertRecord?.contributions?.length) return;
 
-      const firstRef = hypercertRecord.contributions[0];
-      const parsed = parseAtUri(firstRef?.uri);
-      if (!parsed) return;
+  //     const firstRef = hypercertRecord.contributions[0];
+  //     const parsed = parseAtUri(firstRef?.uri);
+  //     if (!parsed) return;
 
-      try {
-        setFetching(true);
-        const response = await atProtoAgent.com.atproto.repo.getRecord({
-          repo: parsed.did,
-          collection: parsed.collection || "org.hypercerts.claim.contribution",
-          rkey: parsed.rkey,
-        });
+  //     try {
+  //       setFetching(true);
+  //       const response = await atProtoAgent.com.atproto.repo.getRecord({
+  //         repo: parsed.did,
+  //         collection: parsed.collection || "org.hypercerts.claim.contribution",
+  //         rkey: parsed.rkey,
+  //       });
 
-        const value = response?.data?.value as Contribution.Record | undefined;
-        if (!value) return;
+  //       const value = response?.data?.value as Contribution.Record | undefined;
+  //       if (!value) return;
 
-        setRole(value.role ?? "");
-        setContributors(
-          Array.isArray(value.contributors) && value.contributors.length > 0
-            ? value.contributors
-            : [""]
-        );
-        setDescription(value.description ?? "");
-        setWorkTimeframeFrom(
-          value.workTimeframeFrom
-            ? new Date(value.workTimeframeFrom)
-            : undefined
-        );
-        setWorkTimeframeTo(
-          value.workTimeframeTo ? new Date(value.workTimeframeTo) : undefined
-        );
-      } catch (e) {
-        console.error("Failed to prefill contribution:", e);
-      } finally {
-        setFetching(false);
-      }
-    }
-    fetchContributionData();
-  }, [hypercertRecord, atProtoAgent]);
+  //       setRole(value.role ?? "");
+  //       setContributors(
+  //         Array.isArray(value.contributors) && value.contributors.length > 0
+  //           ? value.contributors
+  //           : [""]
+  //       );
+  //       setDescription(value.description ?? "");
+  //       setWorkTimeframeFrom(
+  //         value.workTimeframeFrom
+  //           ? new Date(value.workTimeframeFrom)
+  //           : undefined
+  //       );
+  //       setWorkTimeframeTo(
+  //         value.workTimeframeTo ? new Date(value.workTimeframeTo) : undefined
+  //       );
+  //     } catch (e) {
+  //       console.error("Failed to prefill contribution:", e);
+  //     } finally {
+  //       setFetching(false);
+  //     }
+  //   }
+  //   fetchContributionData();
+  // }, [hypercertRecord, atProtoAgent]);
 
   const addContributor = () => setContributors((arr) => [...arr, ""]);
   const removeContributor = (index: number) =>
@@ -101,22 +92,21 @@ export default function HypercertContributionForm({
   const updateContributor = (index: number, value: string) =>
     setContributors((arr) => arr.map((v, i) => (i === index ? value : v)));
 
-  const createContribution = async (
-    contributionRecord: Contribution.Record
+  const buildHypercertRef = (
+    hypercertData: ComAtprotoRepoGetRecord.Response
   ) => {
-    const response = await atProtoAgent?.com.atproto.repo.createRecord({
-      rkey: String(Date.now()),
-      record: contributionRecord,
-      collection: "org.hypercerts.claim.contribution",
-      repo: atProtoAgent.assertDid,
-    });
-    return response;
+    if (!hypercertData) return;
+    return {
+      $type: "com.atproto.repo.strongRef",
+      uri: hypercertData.data.uri,
+      cid: hypercertData.data.cid,
+    };
   };
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault();
+  const handleContributionCreation = async (
+    hypercertRef: ReturnType<typeof buildHypercertRef>
+  ) => {
     if (!atProtoAgent) return;
-
     const contributionRecord = {
       $type: "org.hypercerts.claim.contribution",
       hypercert: hypercertRef || undefined,
@@ -133,44 +123,54 @@ export default function HypercertContributionForm({
       toast.error(isValidContribution.error || "Invalid contribution record");
       return;
     }
+    const response = await createContribution(
+      atProtoAgent,
+      contributionRecord as Contribution.Record
+    );
+    return response;
+  };
 
+  const handleHypercertUpdate = async (
+    contributionData: Awaited<ReturnType<typeof handleContributionCreation>>,
+    hypercertRecord: Claim.Record
+  ) => {
+    const contributionCid = contributionData?.data?.cid;
+    const contributionURI = contributionData?.data?.uri;
+    if (!contributionCid || !contributionURI) return;
+    const updatedHypercert = {
+      ...hypercertRecord,
+      contributions: [
+        {
+          $type: "com.atproto.repo.strongRef",
+          cid: contributionCid,
+          uri: contributionURI,
+        },
+      ],
+    };
+    const isValidHypercert = validateHypercert(updatedHypercert);
+    if (!isValidHypercert.success) {
+      toast.error(isValidHypercert.error || "Invalid updated hypercert");
+      return;
+    }
+    await updateHypercert(
+      hypercertId,
+      atProtoAgent!,
+      updatedHypercert as Claim.Record
+    );
+    toast.success("Contribution updated and linked!");
+    onSkip?.();
+  };
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault();
+    if (!atProtoAgent) return;
+    const hypercertInfo = await getHypercert(hypercertId, atProtoAgent);
+    const hypercertRef = buildHypercertRef(hypercertInfo);
+    const hypercertRecord = (hypercertInfo.data.value || {}) as Claim.Record;
     try {
       setSaving(true);
-
-      const response = await createContribution(
-        contributionRecord as Contribution.Record
-      );
-
-      const contributionCid = response?.data?.cid;
-      const contributionURI = response?.data?.uri;
-      if (!contributionCid || !contributionURI) return;
-
-      const updatedHypercert = {
-        ...hypercertRecord,
-        contributions: [
-          {
-            $type: "com.atproto.repo.strongRef",
-            cid: contributionCid,
-            uri: contributionURI,
-          },
-        ],
-      };
-
-      const isValidHypercert = validateHypercert(updatedHypercert);
-      if (!isValidHypercert.success) {
-        toast.error(isValidHypercert.error || "Invalid updated hypercert");
-        return;
-      }
-
-      await atProtoAgent.com.atproto.repo.putRecord({
-        rkey: hypercertId,
-        repo: atProtoAgent.assertDid,
-        collection: "org.hypercerts.claim",
-        record: updatedHypercert,
-      });
-
-      toast.success("Contribution updated and linked!");
-      onSkip?.();
+      const contributionData = await handleContributionCreation(hypercertRef);
+      await handleHypercertUpdate(contributionData, hypercertRecord);
     } catch (error) {
       console.error("Error saving contribution:", error);
       toast.error("Failed to update contribution");
@@ -198,8 +198,7 @@ export default function HypercertContributionForm({
                   Step 2 of 2 · Contributions
                 </p>
                 <CardTitle className="text-2xl mt-1">
-                  {hypercertRecord?.contributions?.length ? "Update" : "Add"}{" "}
-                  Hypercert Contribution
+                  Add Hypercert Contribution
                 </CardTitle>
                 <CardDescription className="mt-1">
                   Link roles, contributors, and timeframes for this hypercert.
