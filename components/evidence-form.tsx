@@ -25,10 +25,12 @@ type ContentMode = "link" | "file";
 export default function HypercertEvidenceForm({
   hypercertId,
   hypercertData,
+  onNext,
   onBack,
 }: {
   hypercertId: string;
   hypercertData?: HypercertRecordData;
+  onNext?: () => void;
   onBack?: () => void;
 }) {
   const { atProtoAgent } = useOAuthContext();
@@ -138,6 +140,7 @@ export default function HypercertEvidenceForm({
       });
 
       toast.success("Evidence created and linked to hypercert!");
+      onNext?.();
     } catch (error) {
       console.error("Error saving evidence:", error);
       toast.error("Failed to create evidence");
@@ -282,7 +285,17 @@ export default function HypercertEvidenceForm({
                 ) : (
                   <div />
                 )}
-
+                {!!onNext && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onNext}
+                    className="gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4 rotate-180" />
+                    Skip
+                  </Button>
+                )}
                 <Button
                   type="submit"
                   disabled={saving}

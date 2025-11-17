@@ -17,11 +17,14 @@ import HypercertLocationForm from "@/components/locations-form";
 
 export default function Home() {
   const { atProtoAgent, session } = useOAuthContext();
-  const [step, setStep] = useState<number>(4);
+  const [step, setStep] = useState<number>(1);
   const [creating, setCreating] = useState(false);
   const [hypercertId, setHypercertId] = useState<string>();
   const [certData, setCertData] = useState<CertData>();
 
+  const nextStepper = () => {
+    setStep((step) => step + 1);
+  };
   const handleCreate = async (
     certInfo: HypercertRecordForm,
     advance?: boolean
@@ -122,13 +125,17 @@ export default function Home() {
           <HypercertEvidenceForm
             hypercertId={hypercertId}
             hypercertData={certData}
+            onNext={nextStepper}
             onBack={() => setStep(2)}
           />
         </div>
       )}
-      {step === 4 && (
+      {step === 4 && hypercertId && certData && (
         <div className="mt-6">
-          <HypercertLocationForm hypercertId={hypercertId} />
+          <HypercertLocationForm
+            onNext={nextStepper}
+            hypercertId={hypercertId}
+          />
         </div>
       )}
     </div>

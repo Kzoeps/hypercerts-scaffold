@@ -1,6 +1,5 @@
 "use client";
 
-import { FormEventHandler, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,27 +12,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import * as Location from "@/lexicons/types/app/certified/location";
-import { HypercertRecordData } from "@/lib/types";
+import { getHypercert } from "@/lib/queries";
 import { validateHypercert } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { ArrowLeft, Link as LinkIcon, Upload } from "lucide-react";
+import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 
 type LocationContentMode = "link" | "file";
 
 export default function HypercertLocationForm({
   hypercertId,
-  hypercertData,
   onBack,
   onNext,
 }: {
   hypercertId: string;
-  hypercertData?: HypercertRecordData;
   onBack?: () => void;
   onNext?: () => void;
 }) {
   const { atProtoAgent } = useOAuthContext();
-  const hypercertRecord = hypercertData?.value;
 
   const [lpVersion, setLpVersion] = useState("1.0.0");
   const [srs, setSrs] = useState(
@@ -66,11 +63,6 @@ export default function HypercertLocationForm({
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (!atProtoAgent) return;
-    if (!hypercertRecord) {
-      toast.error("Hypercert data not loaded");
-      return;
-    }
-
     try {
       setSaving(true);
 
@@ -131,9 +123,9 @@ export default function HypercertLocationForm({
         setSaving(false);
         return;
       }
+      const hypercert = await getHypercert(hypercertId, atProtoAgent);
+      const hypercertRecord = hypercert.data.value || {};
 
-      // Assumes hypercert has a `locations` field similar to `contributions`.
-      // For now, keep it to a single location.
       const updatedHypercert = {
         ...hypercertRecord,
         locations: [
