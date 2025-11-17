@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
-import { useOAuthContext } from "@/providers/OAuthProviderSSR";
+import { Spinner } from "@/components/ui/spinner"; import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import type * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim";
 
 import HypercertDetailsForm from "@/components/hypercerts-detail-form";

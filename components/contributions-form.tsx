@@ -27,10 +27,12 @@ export default function HypercertContributionForm({
   hypercertId,
   hypercertData,
   onBack,
+  onSkip,
 }: {
   hypercertId: string;
   hypercertData?: HypercertRecordData;
   onBack?: () => void;
+  onSkip?: () => void;
 }) {
   const { atProtoAgent } = useOAuthContext();
 
@@ -50,7 +52,6 @@ export default function HypercertContributionForm({
   const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Prefill from first contribution (if present)
   useEffect(() => {
     async function fetchContributionData() {
       if (!atProtoAgent || !hypercertRecord?.contributions?.length) return;
@@ -292,7 +293,7 @@ export default function HypercertContributionForm({
               </div>
 
               <div className="flex items-center justify-end gap-4 pt-2">
-                {onBack ? (
+                {!!onBack && (
                   <Button
                     type="button"
                     variant="outline"
@@ -302,8 +303,17 @@ export default function HypercertContributionForm({
                     <ArrowLeft className="h-4 w-4" />
                     Back
                   </Button>
-                ) : (
-                  <div />
+                )}
+                {!!onSkip && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onSkip}
+                    className="gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Skip
+                  </Button>
                 )}
 
                 <Button
@@ -311,7 +321,7 @@ export default function HypercertContributionForm({
                   disabled={saving}
                   className="min-w-[180px]"
                 >
-                  {saving ? "Saving…" : "Update Contribution"}
+                  {saving ? "Adding" : "Add Contribution"}
                 </Button>
               </div>
             </form>

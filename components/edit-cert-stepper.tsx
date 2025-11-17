@@ -1,7 +1,8 @@
-export function StepperHeader({ step }: { step: 1 | 2 }) {
+export function StepperHeader({ step }: { step: number }) {
   const steps = [
     { id: 1, label: "Hypercert Details" },
     { id: 2, label: "Contributions" },
+    { id: 3, label: "Evidence" },
   ];
   return (
     <div className="flex items-center justify-center gap-6 my-6">

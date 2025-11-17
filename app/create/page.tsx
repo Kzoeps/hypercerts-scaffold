@@ -1,19 +1,30 @@
 "use client";
 
+import HypercertContributionForm from "@/components/contributions-form";
+import { StepperHeader } from "@/components/edit-cert-stepper";
 import HypercertsBaseForm, {
   HypercertRecordForm,
 } from "@/components/hypercerts-base-form";
 import * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim";
+import { parseAtUri } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { BlobRef } from "@atproto/lexicon";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CertData } from "../[hypercertId]/edit/page";
+import HypercertEvidenceForm from "@/components/evidence-form";
 
 export default function Home() {
   const { atProtoAgent, session } = useOAuthContext();
+  const [step, setStep] = useState<number>(1);
   const [creating, setCreating] = useState(false);
+  const [hypercertId, setHypercertId] = useState<string>();
+  const [certData, setCertData] = useState<CertData>();
 
-  const handleCreate = async (certInfo: HypercertRecordForm) => {
+  const handleCreate = async (
+    certInfo: HypercertRecordForm,
+    advance?: boolean
+  ) => {
     try {
       if (!atProtoAgent || !session) return;
       setCreating(true);
@@ -45,13 +56,26 @@ export default function Home() {
         HypercertRecord.isRecord(record) &&
         HypercertRecord.validateRecord(record).success
       ) {
-        await atProtoAgent.com.atproto.repo.createRecord({
+        const response = await atProtoAgent.com.atproto.repo.createRecord({
           rkey: new Date().getTime().toString(),
           record,
           collection: "org.hypercerts.claim",
           repo: atProtoAgent.assertDid,
         });
+        const uriInfo = parseAtUri(response.data.uri);
+        if (uriInfo?.rkey) {
+          const response = await atProtoAgent.com.atproto.repo.getRecord({
+            repo: atProtoAgent.assertDid,
+            collection: "org.hypercerts.claim",
+            rkey: uriInfo.rkey,
+          });
+          setHypercertId(uriInfo.rkey);
+          setCertData(response?.data as CertData);
+        }
         toast.success("Hypercert created successfully!");
+        if (advance) {
+          setStep((step) => step + 1);
+        }
       } else {
         const validation = HypercertRecord.validateRecord(record);
         if (!validation.success) {
@@ -72,10 +96,35 @@ export default function Home() {
     }
   };
   return (
-    <HypercertsBaseForm
-      isSaving={creating}
-      saveDisabled={false}
-      onSave={handleCreate}
-    />
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <StepperHeader step={step} />
+      {step === 1 && (
+        <HypercertsBaseForm
+          updateActions
+          isSaving={creating}
+          saveDisabled={false}
+          onSave={handleCreate}
+        />
+      )}
+      {step === 2 && hypercertId && certData && (
+        <div className="mt-6">
+          <HypercertContributionForm
+            hypercertId={hypercertId}
+            hypercertData={certData}
+            onSkip={() => setStep((step) => step + 1)}
+            onBack={() => setStep(1)}
+          />
+        </div>
+      )}
+      {step === 3 && hypercertId && certData && (
+        <div className="mt-6">
+          <HypercertEvidenceForm
+            hypercertId={hypercertId}
+            hypercertData={certData}
+            onBack={() => setStep(2)}
+          />
+        </div>
+      )}
+    </div>
   );
 }
