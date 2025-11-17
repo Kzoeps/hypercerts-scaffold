@@ -3,6 +3,7 @@ export function StepperHeader({ step }: { step: number }) {
     { id: 1, label: "Hypercert Details" },
     { id: 2, label: "Contributions" },
     { id: 3, label: "Evidence" },
+    { id: 4, label: "Location" },
   ];
   return (
     <div className="flex items-center justify-center gap-6 my-6">

@@ -13,6 +13,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CertData } from "../[hypercertId]/edit/page";
 import HypercertEvidenceForm from "@/components/evidence-form";
+import HypercertLocationForm from "@/components/locations-form";
 
 export default function Home() {
   const { atProtoAgent, session } = useOAuthContext();
@@ -123,6 +124,11 @@ export default function Home() {
             hypercertData={certData}
             onBack={() => setStep(2)}
           />
+        </div>
+      )}
+      {step === 4 && hypercertId && certData && (
+        <div className="mt-6">
+          <HypercertLocationForm hypercertId={hypercertId} />
         </div>
       )}
     </div>
