@@ -170,6 +170,7 @@ export default function HypercertContributionForm({
       });
 
       toast.success("Contribution updated and linked!");
+      onSkip?.();
     } catch (error) {
       console.error("Error saving contribution:", error);
       toast.error("Failed to update contribution");
@@ -311,7 +312,7 @@ export default function HypercertContributionForm({
                     onClick={onSkip}
                     className="gap-2"
                   >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-4 w-4 rotate-180" />
                     Skip
                   </Button>
                 )}
@@ -321,7 +322,7 @@ export default function HypercertContributionForm({
                   disabled={saving}
                   className="min-w-[180px]"
                 >
-                  {saving ? "Adding" : "Add Contribution"}
+                  {saving ? "Adding" : "Add Contribution & Next"}
                 </Button>
               </div>
             </form>

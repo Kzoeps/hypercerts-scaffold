@@ -15,3 +15,7 @@ export type HypercertContributionData = Omit<
 > & {
   value: HypercertContribution.Record;
 };
+
+export enum Collections {
+  claim = "org.hypercerts.claim"
+}

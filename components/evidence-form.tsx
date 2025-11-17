@@ -18,6 +18,7 @@ import { validateHypercert } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { ArrowLeft, Upload, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
+import { getHypercert } from "@/lib/queries";
 
 type ContentMode = "link" | "file";
 
@@ -108,8 +109,9 @@ export default function HypercertEvidenceForm({
         return;
       }
 
+      const hypercertData = await getHypercert(hypercertId, atProtoAgent);
       const updatedHypercert = {
-        ...hypercertRecord,
+        ...hypercertData.data.value,
         evidence: [
           {
             $type: "com.atproto.repo.strongRef",
