@@ -150,6 +150,7 @@ export default function HypercertRightsForm({
                   id="rightsType"
                   placeholder="e.g., cc-by-sa-4.0, all-rights-reserved"
                   value={rightsType}
+                  maxLength={10}
                   onChange={(e) => setRightsType(e.target.value)}
                   required
                 />

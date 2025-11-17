@@ -35,26 +35,17 @@ export default function Home() {
         </div>
       )}
       {step === 3 && hypercertId && (
-        <div className="mt-6">
-          <HypercertEvidenceForm
-            hypercertId={hypercertId}
-            onNext={nextStepper}
-            onBack={() => setStep(2)}
-          />
-        </div>
+        <HypercertEvidenceForm
+          hypercertId={hypercertId}
+          onNext={nextStepper}
+          onBack={() => setStep(2)}
+        />
       )}
       {step === 4 && hypercertId && (
-        <div className="mt-6">
-          <HypercertLocationForm
-            onNext={nextStepper}
-            hypercertId={hypercertId}
-          />
-        </div>
+        <HypercertLocationForm onNext={nextStepper} hypercertId={hypercertId} />
       )}
       {step === 5 && hypercertId && (
-        <div className="mt-6">
-          <HypercertRightsForm onNext={nextStepper} hypercertId={hypercertId} />
-        </div>
+        <HypercertRightsForm onNext={nextStepper} hypercertId={hypercertId} />
       )}
     </div>
   );
