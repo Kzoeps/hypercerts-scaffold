@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import ContributionsView from "@/components/hypercert-contribution-view";
 import HypercertDetailsView from "@/components/hypercert-detail-view";
 import { HypercertRecordData } from "@/lib/types";
+import EvidenceView from "@/components/hypercert-evidence-view";
 
 export default function HypercertDetailsPage() {
   const params = useParams<{ hypercertId: string }>();
@@ -83,6 +84,14 @@ export default function HypercertDetailsPage() {
         </CardHeader>
         <CardContent>
           <ContributionsView hypercertData={certData} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl">Evidence</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EvidenceView hypercertData={certData} />
         </CardContent>
       </Card>
     </div>
