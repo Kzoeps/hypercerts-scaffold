@@ -11,6 +11,7 @@ import HypercertDetailsView from "@/components/hypercert-detail-view";
 import { HypercertRecordData } from "@/lib/types";
 import EvidenceView from "@/components/hypercert-evidence-view";
 import RightsView from "@/components/hypercert-rights-view";
+import LocationView from "@/components/hypercert-location-view";
 
 export default function HypercertDetailsPage() {
   const params = useParams<{ hypercertId: string }>();
@@ -101,6 +102,14 @@ export default function HypercertDetailsPage() {
         </CardHeader>
         <CardContent>
           <RightsView hypercertData={certData} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl">Location</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LocationView hypercertData={certData} />
         </CardContent>
       </Card>
     </div>

@@ -1,0 +1,198 @@
+"use client";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+import { useOAuthContext } from "@/providers/OAuthProviderSSR";
+import { ReactNode, useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import type { HypercertRecordData, HypercertLocationData } from "@/lib/types";
+import { parseAtUri } from "@/lib/utils";
+import { URILink } from "./uri-link";
+import { $Typed } from "@atproto/api";
+import { SmallBlob, Uri } from "@/lexicons/types/app/certified/defs";
+
+export default function LocationView({
+  hypercertData,
+}: {
+  hypercertData?: HypercertRecordData;
+}) {
+  const { atProtoAgent } = useOAuthContext();
+  const hypercertRecord = hypercertData?.value;
+
+  const [loading, setLoading] = useState(false);
+  const [location, setLocation] = useState<HypercertLocationData | null>(null);
+
+  useEffect(() => {
+    async function fetchLocation() {
+      if (!atProtoAgent) return;
+      const locationRef = hypercertRecord?.location;
+      if (!locationRef?.uri) return;
+
+      setLoading(true);
+      try {
+        const parsedURI = parseAtUri(locationRef.uri);
+        if (!parsedURI) {
+          setLoading(false);
+          return;
+        }
+
+        const response = await atProtoAgent.com.atproto.repo.getRecord({
+          repo: parsedURI.did,
+          collection: parsedURI.collection || "app.certified.location",
+          rkey: parsedURI.rkey,
+        });
+
+        const data = response?.data;
+        if (!data) {
+          setLocation(null);
+        } else {
+          setLocation(data as HypercertLocationData);
+        }
+      } catch (e) {
+        console.error("Error loading location", e);
+        toast.error("Failed to load location");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLocation();
+  }, [atProtoAgent, hypercertRecord?.location]);
+
+  // No location reference at all on the hypercert
+  if (!hypercertRecord?.location) {
+    return <p className="text-sm text-muted-foreground">No location linked.</p>;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Spinner />
+      </div>
+    );
+  }
+
+  // There is a location ref, but we couldn’t fetch details
+  if (!location) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Location reference present, but details could not be loaded.
+      </p>
+    );
+  }
+
+  const record = location.value;
+
+  // Render the `location` union (URI or SmallBlob)
+  const loc = record.location;
+  const locType = loc?.$type as string | undefined;
+
+  let locationContentDisplay: ReactNode = "—";
+
+  // URI-type location (AppCertifiedDefs.Uri)
+  if (locType === "app.certified.defs#uri") {
+    const uri = (loc as $Typed<Uri>).value;
+    locationContentDisplay = <URILink uri={uri} />;
+  }
+  // SmallBlob-type location
+  else if (
+    locType === "app.certified.defs#smallBlob" ||
+    locType === "smallBlob"
+  ) {
+    const blobRef = (loc as $Typed<SmallBlob>).ref;
+    locationContentDisplay = (
+      <p className="text-sm">
+        Blob-based location data
+        {blobRef && (
+          <>
+            {" · "}
+            <span className="font-mono break-all">
+              {blobRef as unknown as string}
+            </span>
+          </>
+        )}
+      </p>
+    );
+  }
+  // Fallback: unknown typed content
+  else if (locType) {
+    locationContentDisplay = (
+      <span className="text-xs font-mono break-all">{locType}</span>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="border">
+        <CardContent className="py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="Location Protocol Version"
+              value={record.lpVersion || "—"}
+            />
+            <Field
+              label="Spatial Reference System (SRS)"
+              value={record.srs || "—"}
+            />
+
+            <Field label="Location Type" value={record.locationType || "—"} />
+            <Field
+              label="Created At"
+              value={
+                record.createdAt
+                  ? new Date(record.createdAt).toLocaleString()
+                  : "—"
+              }
+            />
+
+            <Field label="Location Name" value={record.name || "—"} />
+
+            <div className="md:col-span-2">
+              <LabelSmall>Location Description</LabelSmall>
+              <p className="text-sm whitespace-pre-wrap">
+                {record.description || "—"}
+              </p>
+            </div>
+
+            <div className="md:col-span-2">
+              <LabelSmall>Location Data</LabelSmall>
+              <div className="text-sm">{locationContentDisplay}</div>
+            </div>
+
+            <Separator className="md:col-span-2" />
+
+            <Field
+              label="URI"
+              value={<URILink uri={location.uri || "—"} />}
+              mono
+            />
+            <Field label="CID" value={location.cid || "—"} mono />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function LabelSmall({ children }: { children: React.ReactNode }) {
+  return <div className="text-xs text-muted-foreground mb-1">{children}</div>;
+}
+
+function Field({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <div className="space-y-1">
+      <LabelSmall>{label}</LabelSmall>
+      <p className={`text-sm ${mono ? "font-mono break-all" : ""}`}>{value}</p>
+    </div>
+  );
+}

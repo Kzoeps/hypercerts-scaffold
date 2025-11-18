@@ -119,13 +119,11 @@ export default function HypercertLocationForm({
       {}) as HypercertClaim.Record;
     const updatedHypercert = {
       ...hypercertRecord,
-      locations: [
-        {
-          $type: "com.atproto.repo.strongRef",
-          cid: locationCID,
-          uri: locationURI,
-        },
-      ],
+      location: {
+        $type: "com.atproto.repo.strongRef" as const,
+        cid: locationCID,
+        uri: locationURI,
+      },
     };
 
     const hypercertValidation = validateHypercert(updatedHypercert);
