@@ -7,6 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import * as Hypercert from "@/lexicons/types/org/hypercerts/claim";
 import { Label } from "@radix-ui/react-label";
+import { PlusIcon, XIcon } from "lucide-react";
 import { FormEventHandler, useState } from "react";
 
 export interface HypercertsBaseFormProps {
@@ -39,7 +40,26 @@ export default function HypercertsBaseForm({
   const [shortDescription, setShortDescription] = useState(
     certInfo?.shortDescription || ""
   );
-  const [workScope, setWorkScope] = useState(certInfo?.workScope);
+
+  // Initialize workScope as an array of strings
+  const [workScope, setWorkScope] = useState<string[]>(() => {
+    const raw = certInfo?.workScope as unknown;
+
+    if (Array.isArray(raw)) {
+      return raw.map((w) => String(w)).filter(Boolean);
+    }
+
+    if (typeof raw === "string" && raw.trim().length > 0) {
+      return raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+
+    // Default: one empty field
+    return [""];
+  });
+
   const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date | null>(
     certInfo?.workTimeFrameFrom ? new Date(certInfo?.workTimeFrameFrom) : null
   );
@@ -47,22 +67,45 @@ export default function HypercertsBaseForm({
     certInfo?.workTimeFrameTo ? new Date(certInfo?.workTimeFrameTo) : null
   );
 
-  const getRecord = () => {
+  // Handlers for multi-input work scope
+  const handleWorkScopeChange = (index: number, value: string) => {
+    setWorkScope((prev) => {
+      const copy = [...prev];
+      copy[index] = value;
+      return copy;
+    });
+  };
+
+  const addWorkScopeField = () => {
+    setWorkScope((prev) => [...prev, ""]);
+  };
+
+  const removeWorkScopeField = (index: number) => {
+    setWorkScope((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const getRecord = (): HypercertRecordForm | undefined => {
+    const cleanedWorkScope = workScope
+      .map((w) => w.trim())
+      .filter(Boolean)
+      .join(",");
+
     if (
       !(
         title &&
         shortDescription &&
-        workScope &&
+        cleanedWorkScope.length > 0 &&
         workTimeframeFrom &&
         workTimeframeTo
       )
     ) {
       return;
     }
-    const record = {
+
+    const record: HypercertRecordForm = {
       title,
       shortDescription,
-      workScope,
+      workScope: cleanedWorkScope, // array of tags
       image: file,
       workTimeFrameFrom: workTimeframeFrom.toISOString(),
       workTimeFrameTo: workTimeframeTo.toISOString(),
@@ -77,11 +120,13 @@ export default function HypercertsBaseForm({
     if (!record) return;
     onSave?.(record, false);
   };
+
   const handleSaveAndContinue = () => {
     const record = getRecord();
     if (!record) return;
     onSave?.(record, true);
   };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -95,8 +140,9 @@ export default function HypercertsBaseForm({
           value={title}
           placeholder="Enter the hypercert name"
           required
-        ></Input>
+        />
       </div>
+
       <div className="flex flex-col gap-1">
         <Label htmlFor="description">Short Description</Label>
         <Textarea
@@ -105,27 +151,58 @@ export default function HypercertsBaseForm({
           value={shortDescription}
           placeholder="Enter a short description"
           required
-        ></Textarea>
+        />
       </div>
+
       <div className="flex flex-col gap-1">
-        <Label htmlFor="short-description">Background Image</Label>
+        <Label htmlFor="background-image">Background Image</Label>
         <Input
+          id="background-image"
           onChange={(e) => setFile(e.target.files?.[0])}
           type="file"
           placeholder="Add Background Image"
           required
-        ></Input>
+        />
       </div>
+
       <div className="flex flex-col gap-1">
         <Label htmlFor="workScope">Work Scope Tags</Label>
-        <Textarea
-          onChange={(e) => setWorkScope(e.target.value)}
-          value={workScope}
-          id="workScope"
-          placeholder="Enter tags that describe the work"
-          required
-        ></Textarea>
+        <div id="workScope" className="flex w-full flex-col gap-2">
+          {workScope.map((value, index) => (
+            <div key={index} className="flex w-full justify-between gap-2">
+              <Input
+                value={value}
+                onChange={(e) => handleWorkScopeChange(index, e.target.value)}
+                placeholder="Enter a tag"
+                required={index === 0}
+              />
+              {workScope.length > 1 && index !== 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size={"icon"}
+                  onClick={() => removeWorkScopeField(index)}
+                  aria-label="Remove tag"
+                >
+                  <XIcon />
+                </Button>
+              )}
+              {!!workScope[index] && index === workScope.length - 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size={"icon"}
+                  onClick={addWorkScopeField}
+                  aria-label="Add another work scope tag"
+                >
+                  <PlusIcon />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
+
       <div className="flex justify-between w-full">
         <DatePicker
           initDate={workTimeframeFrom || undefined}
@@ -138,6 +215,7 @@ export default function HypercertsBaseForm({
           label="Work Time Frame To"
         />
       </div>
+
       {!!updateActions && (
         <div className="flex gap-3 justify-end pt-2">
           <Button
@@ -161,6 +239,7 @@ export default function HypercertsBaseForm({
           </Button>
         </div>
       )}
+
       {!updateActions && (
         <Button disabled={saveDisabled || isSaving} type="submit">
           {isSaving && <Spinner />}
