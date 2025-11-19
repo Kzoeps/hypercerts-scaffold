@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { PDS_URL } from "@/utils/constants";
+import Link from "next/link";
 
 export default function Navbar() {
   const { isSignedIn, signIn, signOut, isLoading } = useOAuthContext();
@@ -43,7 +44,8 @@ export default function Navbar() {
     <nav className="border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="flex h-14 items-center justify-end gap-3 px-4 max-w-7xl mx-auto">
         {isSignedIn ? (
-          <>
+          <div className="gap-4 flex items-center">
+            <Link href={`/my-hypercerts`} className="underline hover:text-gray-500">My Hypercerts</Link>
             {userHandle && (
               <span className="text-sm text-muted-foreground">
                 @{userHandle}
@@ -57,7 +59,7 @@ export default function Navbar() {
             >
               Logout
             </Button>
-          </>
+          </div>
         ) : (
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>

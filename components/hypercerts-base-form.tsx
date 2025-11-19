@@ -41,8 +41,8 @@ export default function HypercertsBaseForm({
   const [shortDescription, setShortDescription] = useState(
     certInfo?.shortDescription || ""
   );
+  const [buttonClicked, setButtonClicked] = useState<"saveNext" | "create">();
 
-  // Initialize workScope as an array of strings
   const [workScope, setWorkScope] = useState<string[]>(() => {
     const raw = certInfo?.workScope as unknown;
 
@@ -56,8 +56,6 @@ export default function HypercertsBaseForm({
         .map((s) => s.trim())
         .filter(Boolean);
     }
-
-    // Default: one empty field
     return [""];
   });
 
@@ -116,12 +114,14 @@ export default function HypercertsBaseForm({
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
+    setButtonClicked("create");
     const record = getRecord();
     if (!record) return;
     onSave?.(record, false);
   };
 
   const handleSaveAndContinue = () => {
+    setButtonClicked("saveNext");
     const record = getRecord();
     if (!record) return;
     onSave?.(record, true);
@@ -228,7 +228,7 @@ export default function HypercertsBaseForm({
             aria-label="Save"
           >
             {isSaving && <Spinner className="mr-2" />}
-            {isSaving ? "Saving…" : "Save"}
+            {isSaving && buttonClicked === "create" ? "Creating…" : "Create"}
           </Button>
 
           <Button
@@ -238,7 +238,9 @@ export default function HypercertsBaseForm({
             aria-label="Save and go to Contributions"
           >
             {isSaving && <Spinner className="mr-2" />}
-            {isSaving ? "Saving…" : "Save & Next"}
+            {isSaving && buttonClicked === "saveNext"
+              ? "Creating…"
+              : "Create & Next"}
           </Button>
         </div>
       )}
