@@ -23,6 +23,7 @@ export interface HypercertRecordForm {
   shortDescription: string;
   workScope: string;
   image?: File;
+  logo?: File;
   workTimeFrameFrom: string;
   workTimeFrameTo: string;
   createdAt: string;
@@ -36,7 +37,7 @@ export default function HypercertsBaseForm({
   certInfo,
 }: HypercertsBaseFormProps) {
   const [title, setTitle] = useState(certInfo?.title || "");
-  const [file, setFile] = useState<File | undefined>();
+  const [backgroundImage, setBackgroundImage] = useState<File | undefined>();
   const [shortDescription, setShortDescription] = useState(
     certInfo?.shortDescription || ""
   );
@@ -67,7 +68,6 @@ export default function HypercertsBaseForm({
     certInfo?.workTimeFrameTo ? new Date(certInfo?.workTimeFrameTo) : null
   );
 
-  // Handlers for multi-input work scope
   const handleWorkScopeChange = (index: number, value: string) => {
     setWorkScope((prev) => {
       const copy = [...prev];
@@ -94,7 +94,7 @@ export default function HypercertsBaseForm({
       !(
         title &&
         shortDescription &&
-        cleanedWorkScope.length > 0 &&
+        cleanedWorkScope &&
         workTimeframeFrom &&
         workTimeframeTo
       )
@@ -105,8 +105,8 @@ export default function HypercertsBaseForm({
     const record: HypercertRecordForm = {
       title,
       shortDescription,
-      workScope: cleanedWorkScope, // array of tags
-      image: file,
+      workScope: cleanedWorkScope,
+      image: backgroundImage,
       workTimeFrameFrom: workTimeframeFrom.toISOString(),
       workTimeFrameTo: workTimeframeTo.toISOString(),
       createdAt: new Date().toISOString(),
@@ -128,10 +128,7 @@ export default function HypercertsBaseForm({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 max-w-md mx-auto py-10"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <Label htmlFor="title">Hypercert Name</Label>
         <Input
@@ -155,10 +152,12 @@ export default function HypercertsBaseForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="background-image">Background Image</Label>
+        <Label htmlFor="background-image" aria-required>
+          Background Image *
+        </Label>
         <Input
           id="background-image"
-          onChange={(e) => setFile(e.target.files?.[0])}
+          onChange={(e) => setBackgroundImage(e.target.files?.[0])}
           type="file"
           placeholder="Add Background Image"
           required
@@ -203,17 +202,21 @@ export default function HypercertsBaseForm({
         </div>
       </div>
 
-      <div className="flex justify-between w-full">
-        <DatePicker
-          initDate={workTimeframeFrom || undefined}
-          onChange={setWorkTimeframeFrom}
-          label="Work Time Frame From"
-        />
-        <DatePicker
-          initDate={workTimeframeTo || undefined}
-          onChange={setWorkTimeframeTo}
-          label="Work Time Frame To"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <DatePicker
+            initDate={workTimeframeFrom || undefined}
+            onChange={setWorkTimeframeFrom}
+            label="Work Time Frame From"
+          />
+        </div>
+        <div>
+          <DatePicker
+            initDate={workTimeframeTo || undefined}
+            onChange={setWorkTimeframeTo}
+            label="Work Time Frame To"
+          />
+        </div>
       </div>
 
       {!!updateActions && (

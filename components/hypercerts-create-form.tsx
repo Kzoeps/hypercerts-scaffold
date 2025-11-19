@@ -8,6 +8,7 @@ import HypercertsBaseForm, {
   HypercertRecordForm,
 } from "./hypercerts-base-form";
 import { createHypercert, uploadFile } from "@/lib/queries";
+import FormInfo from "./form-info";
 
 export interface IHypercertsCreateFormProps {
   setHypercertId: (id: string) => void;
@@ -79,11 +80,16 @@ export default function HypercertsCreateForm({
     }
   };
   return (
-    <HypercertsBaseForm
-      updateActions
-      isSaving={creating}
-      saveDisabled={false}
-      onSave={handleCreate}
-    />
+    <FormInfo
+      description="These details need to be filled out to crete a hypercert."
+      title={"Create HyperCert"}
+    >
+      <HypercertsBaseForm
+        updateActions
+        isSaving={creating}
+        saveDisabled={false}
+        onSave={handleCreate}
+      />
+    </FormInfo>
   );
 }

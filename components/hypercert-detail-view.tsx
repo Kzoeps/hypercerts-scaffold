@@ -33,10 +33,10 @@ export default function HypercertDetailsView({
       <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
           <dt className="text-xs text-muted-foreground">Work Scope</dt>
-          <dd className="text-sm">
-            {Array.isArray(record.workScope) && record.workScope.length
-              ? record.workScope.join(", ")
-              : "—"}
+          <dd className="text-sm flex gap-2">
+            {record.workScope.split(",").map((scope) => {
+              return <Badge key={scope}>{scope}</Badge>;
+            })}
           </dd>
         </div>
 
@@ -72,7 +72,10 @@ export default function HypercertDetailsView({
         <div className="space-y-1 md:col-span-2">
           <dt className="text-xs text-muted-foreground">URI</dt>
           <dd className="text-sm break-all">
-            <URILink uri={getPDSlsURI(hypercertData.uri)} label={hypercertData.uri} />
+            <URILink
+              uri={getPDSlsURI(hypercertData.uri)}
+              label={hypercertData.uri}
+            />
           </dd>
         </div>
 
