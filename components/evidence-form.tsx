@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import FormFooter from "./form-footer";
 import FormInfo from "./form-info";
 import LinkFileSelector from "./link-file-selector";
+import { buildStrongRef } from "@/lib/utils";
 
 type ContentMode = "link" | "file";
 
@@ -76,13 +77,7 @@ export default function HypercertEvidenceForm({
     const hypercertData = await getHypercert(hypercertId, atProtoAgent!);
     const updatedHypercert = {
       ...hypercertData.data.value,
-      evidence: [
-        {
-          $type: "com.atproto.repo.strongRef",
-          cid: evidenceCid,
-          uri: evidenceURI,
-        },
-      ],
+      evidence: [buildStrongRef(evidenceCid, evidenceURI)],
     };
     return updatedHypercert;
   };

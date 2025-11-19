@@ -9,9 +9,12 @@ import {
   getHypercert,
   updateHypercert,
 } from "@/lib/queries";
-import { validateContribution, validateHypercert } from "@/lib/utils";
+import {
+  buildStrongRef,
+  validateContribution,
+  validateHypercert,
+} from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
-import { ComAtprotoRepoGetRecord } from "@atproto/api";
 import { Plus, X } from "lucide-react";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
@@ -41,19 +44,8 @@ export default function HypercertContributionForm({
   const updateContributor = (index: number, value: string) =>
     setContributors((arr) => arr.map((v, i) => (i === index ? value : v)));
 
-  const buildHypercertRef = (
-    hypercertData: ComAtprotoRepoGetRecord.Response
-  ) => {
-    if (!hypercertData) return;
-    return {
-      $type: "com.atproto.repo.strongRef",
-      uri: hypercertData.data.uri,
-      cid: hypercertData.data.cid,
-    };
-  };
-
   const handleContributionCreation = async (
-    hypercertRef: ReturnType<typeof buildHypercertRef>
+    hypercertRef: ReturnType<typeof buildStrongRef>
   ) => {
     if (!atProtoAgent) return;
     const contributionRecord = {
@@ -88,13 +80,7 @@ export default function HypercertContributionForm({
     if (!contributionCid || !contributionURI) return;
     const updatedHypercert = {
       ...hypercertRecord,
-      contributions: [
-        {
-          $type: "com.atproto.repo.strongRef",
-          cid: contributionCid,
-          uri: contributionURI,
-        },
-      ],
+      contributions: [buildStrongRef(contributionCid, contributionURI)],
     };
     const isValidHypercert = validateHypercert(updatedHypercert);
     if (!isValidHypercert.success) {
@@ -114,7 +100,10 @@ export default function HypercertContributionForm({
     e.preventDefault();
     if (!atProtoAgent) return;
     const hypercertInfo = await getHypercert(hypercertId, atProtoAgent);
-    const hypercertRef = buildHypercertRef(hypercertInfo);
+    const hypercertRef = buildStrongRef(
+      hypercertInfo.data.cid,
+      hypercertInfo.data.uri
+    );
     const hypercertRecord = (hypercertInfo.data.value || {}) as Claim.Record;
     try {
       setSaving(true);
@@ -218,7 +207,7 @@ export default function HypercertContributionForm({
 
         <FormFooter
           onBack={onBack}
-          onSkip={onNext} 
+          onSkip={onNext}
           submitLabel="Save & Next"
           savingLabel="Saving…"
           saving={saving}

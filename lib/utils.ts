@@ -28,13 +28,11 @@ export function getBlobURL(
     const cid = blobRef.ref ?? undefined;
     if (!did || !cid) return undefined;
 
-    // when the ref is read then it becomes a string. forcefully cast as string to avoid ts errors for now
     const url = `${PDS_URL}xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(
       did
     )}&cid=${encodeURIComponent(cid.toString())}`;
     return url;
   }
-
   return undefined;
 }
 
@@ -71,4 +69,13 @@ export function parseAtUri(atUri?: string) {
   const [did, collection, rkey] = atUri.slice("at://".length).split("/");
   if (!did || !collection || !rkey) return;
   return { did, collection, rkey };
+}
+
+export function buildStrongRef(cid?: string, uri?: string) {
+  if (!cid || !uri) return
+  return {
+    $type: "com.atproto.repo.strongRef" as const,
+    cid,
+    uri,
+  };
 }

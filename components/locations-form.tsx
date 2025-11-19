@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import * as Location from "@/lexicons/types/app/certified/location";
 import * as HypercertClaim from "@/lexicons/types/org/hypercerts/claim";
 import { createLocation, getHypercert, updateHypercert } from "@/lib/queries";
-import { validateHypercert } from "@/lib/utils";
+import { buildStrongRef, validateHypercert } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
@@ -114,11 +114,7 @@ export default function HypercertLocationForm({
       {}) as HypercertClaim.Record;
     const updatedHypercert = {
       ...hypercertRecord,
-      location: {
-        $type: "com.atproto.repo.strongRef" as const,
-        cid: locationCID,
-        uri: locationURI,
-      },
+      location: buildStrongRef(locationCID, locationURI),
     };
 
     const hypercertValidation = validateHypercert(updatedHypercert);

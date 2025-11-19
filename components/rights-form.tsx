@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import * as HypercertClaim from "@/lexicons/types/org/hypercerts/claim";
 import * as Rights from "@/lexicons/types/org/hypercerts/claim/rights";
 import { getHypercert, updateHypercert } from "@/lib/queries";
-import { validateHypercert } from "@/lib/utils";
+import { buildStrongRef, validateHypercert } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
@@ -70,11 +70,7 @@ export default function HypercertRightsForm({
     const hypercertRecord = hypercert.data.value || {};
     const updatedHypercert = {
       ...hypercertRecord,
-      rights: {
-        $type: "com.atproto.repo.strongRef",
-        cid: rightsCid,
-        uri: rightsURI,
-      },
+      rights: buildStrongRef(rightsCid, rightsURI),
     } as HypercertClaim.Record;
 
     const hypercertValidation = validateHypercert(updatedHypercert);
