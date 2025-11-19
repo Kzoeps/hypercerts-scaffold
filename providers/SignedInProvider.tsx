@@ -1,8 +1,8 @@
 "use client";
-import { Spinner } from "@/components/ui/spinner";
-import { useOAuthContext } from "./OAuthProviderSSR";
+import Loader from "@/components/loader";
 import LoginDialog from "@/components/login-dialog";
 import Navbar from "@/components/navbar";
+import { useOAuthContext } from "./OAuthProviderSSR";
 
 export function SignedInProvider({ children }: { children?: React.ReactNode }) {
   const { isSignedIn, isLoading } = useOAuthContext();
@@ -14,7 +14,7 @@ export function SignedInProvider({ children }: { children?: React.ReactNode }) {
         <>{children}</>
       ) : (
         <div className="flex grow flex-col items-center justify-center">
-          {!isLoading ? <LoginDialog /> : <Spinner />}
+          {!isLoading ? <LoginDialog /> : <Loader />}
         </div>
       )}
     </>
