@@ -3,10 +3,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { HypercertRecordData } from "@/lib/types";
-import { Link2, LinkIcon } from "lucide-react";
-import Link from "next/link";
-import { URILink } from "./uri-link";
 import { getPDSlsURI } from "@/lib/utils";
+import { URILink } from "./uri-link";
 
 export default function HypercertDetailsView({
   hypercertData,

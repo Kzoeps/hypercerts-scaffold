@@ -13,6 +13,7 @@ import type {
 } from "@/lib/types";
 import { getPDSlsURI, parseAtUri } from "@/lib/utils";
 import { URILink } from "./uri-link";
+import { Field, LabelSmall } from "./hypercert-field";
 
 export default function ContributionsView({
   hypercertData,
@@ -139,27 +140,6 @@ export default function ContributionsView({
           </Card>
         );
       })}
-    </div>
-  );
-}
-
-function LabelSmall({ children }: { children: React.ReactNode }) {
-  return <div className="text-xs text-muted-foreground mb-1">{children}</div>;
-}
-
-function Field({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: ReactNode;
-  mono?: boolean;
-}) {
-  return (
-    <div className="space-y-1">
-      <LabelSmall>{label}</LabelSmall>
-      <p className={`text-sm ${mono ? "font-mono break-all" : ""}`}>{value}</p>
     </div>
   );
 }

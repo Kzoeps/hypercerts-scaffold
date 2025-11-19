@@ -4,11 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
-import { ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import type { HypercertRecordData, HypercertRightsData } from "@/lib/types";
 import { getPDSlsURI, parseAtUri } from "@/lib/utils";
+import { Field, LabelSmall } from "./hypercert-field";
 import { URILink } from "./uri-link";
 
 export default function RightsView({
@@ -124,27 +125,6 @@ export default function RightsView({
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function LabelSmall({ children }: { children: React.ReactNode }) {
-  return <div className="text-xs text-muted-foreground mb-1">{children}</div>;
-}
-
-function Field({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: ReactNode;
-  mono?: boolean;
-}) {
-  return (
-    <div className="space-y-1">
-      <LabelSmall>{label}</LabelSmall>
-      <p className={`text-sm ${mono ? "font-mono break-all" : ""}`}>{value}</p>
     </div>
   );
 }

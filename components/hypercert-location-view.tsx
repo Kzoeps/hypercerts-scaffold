@@ -13,6 +13,7 @@ import { URILink } from "./uri-link";
 import { $Typed } from "@atproto/api";
 import { SmallBlob, Uri } from "@/lexicons/types/app/certified/defs";
 import { blob } from "stream/consumers";
+import { Field, LabelSmall } from "./hypercert-field";
 
 export default function LocationView({
   hypercertData,
@@ -174,27 +175,6 @@ export default function LocationView({
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function LabelSmall({ children }: { children: React.ReactNode }) {
-  return <div className="text-xs text-muted-foreground mb-1">{children}</div>;
-}
-
-function Field({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: ReactNode;
-  mono?: boolean;
-}) {
-  return (
-    <div className="space-y-1">
-      <LabelSmall>{label}</LabelSmall>
-      <p className={`text-sm ${mono ? "font-mono break-all" : ""}`}>{value}</p>
     </div>
   );
 }
