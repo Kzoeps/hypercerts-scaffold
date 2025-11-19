@@ -1,16 +1,9 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import * as Contribution from "@/lexicons/types/org/hypercerts/claim/contribution";
 import * as Claim from "@/lexicons/types/org/hypercerts/claim";
+import * as Contribution from "@/lexicons/types/org/hypercerts/claim/contribution";
 import {
   createContribution,
   getHypercert,
@@ -19,20 +12,21 @@ import {
 import { validateContribution, validateHypercert } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { ComAtprotoRepoGetRecord } from "@atproto/api";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import { DatePicker } from "./date-range-picker";
-import { Spinner } from "./ui/spinner";
+import FormFooter from "./form-footer";
+import FormInfo from "./form-info";
 
 export default function HypercertContributionForm({
   hypercertId,
   onBack,
-  onSkip,
+  onNext,
 }: {
   hypercertId: string;
   onBack?: () => void;
-  onSkip?: () => void;
+  onNext?: () => void;
 }) {
   const { atProtoAgent } = useOAuthContext();
   const [role, setRole] = useState("");
@@ -113,7 +107,7 @@ export default function HypercertContributionForm({
       updatedHypercert as Claim.Record
     );
     toast.success("Contribution updated and linked!");
-    onSkip?.();
+    onNext?.();
   };
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
@@ -135,143 +129,101 @@ export default function HypercertContributionForm({
   };
 
   return (
-    <div className="p-6">
-      <div className="max-w-3xl mx-auto">
-        <Card className="shadow-lg">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl mt-1">
-                  Add Hypercert Contribution
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Link roles, contributors, and timeframes for this hypercert.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
+    <FormInfo
+      stepLabel="Step 2 of 5 . Evidence"
+      title="Add Hypercert Contribution"
+      description="Link roles,contributors and timeframes"
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="role">Role / Title *</Label>
+          <Input
+            id="role"
+            placeholder="e.g., Developer, Designer, Researcher"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            maxLength={100}
+            required
+          />
+        </div>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="role">Role / Title *</Label>
+        <div className="space-y-2">
+          <Label>Contributors (DIDs) *</Label>
+          <div className="space-y-2">
+            {contributors.map((contributor, index) => (
+              <div key={index} className="flex gap-2">
                 <Input
-                  id="role"
-                  placeholder="e.g., Developer, Designer, Researcher"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  maxLength={100}
+                  placeholder="did:plc:123..."
+                  value={contributor}
+                  onChange={(e) => updateContributor(index, e.target.value)}
                   required
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Contributors (DIDs) *</Label>
-                <div className="space-y-2">
-                  {contributors.map((contributor, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        placeholder="did:plc:123..."
-                        value={contributor}
-                        onChange={(e) =>
-                          updateContributor(index, e.target.value)
-                        }
-                        required
-                      />
-                      {contributors.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={() => removeContributor(index)}
-                          aria-label={`Remove contributor ${index + 1}`}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addContributor}
-                  className="mt-2"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Contributor
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="What the contribution concretely achieved..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  maxLength={2000}
-                  rows={4}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {description.length} / 2000 characters
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <DatePicker
-                    label="Work Started"
-                    initDate={workTimeframeFrom}
-                    onChange={setWorkTimeframeFrom}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <DatePicker
-                    label="Work Finished"
-                    initDate={workTimeframeTo}
-                    onChange={setWorkTimeframeTo}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-4 pt-2">
-                {!!onBack && (
+                {contributors.length > 1 && (
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={onBack}
-                    className="gap-2"
+                    size="icon"
+                    onClick={() => removeContributor(index)}
+                    aria-label={`Remove contributor ${index + 1}`}
                   >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
+                    <X className="h-4 w-4" />
                   </Button>
                 )}
-                {!!onSkip && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onSkip}
-                    className="gap-2"
-                  >
-                    <ArrowLeft className="h-4 w-4 rotate-180" />
-                    Skip
-                  </Button>
-                )}
-
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="min-w-[180px]"
-                >
-                  {saving ? "Adding" : "Add Contribution & Next"}
-                </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addContributor}
+            className="mt-2"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Contributor
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description (Optional)</Label>
+          <Textarea
+            id="description"
+            placeholder="What the contribution concretely achieved..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={2000}
+            rows={4}
+          />
+          <p className="text-xs text-muted-foreground">
+            {description.length} / 2000 characters
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <DatePicker
+              label="Work Started"
+              initDate={workTimeframeFrom}
+              onChange={setWorkTimeframeFrom}
+            />
+          </div>
+          <div className="space-y-2">
+            <DatePicker
+              label="Work Finished"
+              initDate={workTimeframeTo}
+              onChange={setWorkTimeframeTo}
+            />
+          </div>
+        </div>
+
+        <FormFooter
+          onBack={onBack}
+          onSkip={onNext} // or onSkip / onNext / onSkip depending on step
+          submitLabel="Save & Next"
+          savingLabel="Saving…"
+          saving={saving}
+        />
+      </form>
+    </FormInfo>
   );
 }

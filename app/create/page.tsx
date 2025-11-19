@@ -25,14 +25,13 @@ export default function Home() {
       {step === 1 && (
         <HypercertsCreateForm
           setHypercertId={setHypercertId}
-          hypercertId={hypercertId}
           nextStepper={nextStepper}
         />
       )}
       {step === 2 && hypercertId && (
         <HypercertContributionForm
           hypercertId={hypercertId}
-          onSkip={() => setStep((step) => step + 1)}
+          onNext={() => setStep((step) => step + 1)}
           onBack={previousStepper}
         />
       )}
