@@ -46,6 +46,26 @@ export const getHypercert = async (rkey: string, atProtoAgent: Agent) => {
   return data;
 };
 
+export const uploadFile = async (atProtoAgent: Agent, file?: File) => {
+  if (file) {
+    const blob = new Blob([file!], { type: file?.type });
+    const response = await atProtoAgent.com.atproto.repo.uploadBlob(blob);
+    return response.data.blob;
+  }
+};
+
+export const createHypercert = async (
+  atProtoAgent: Agent,
+  record: HypercertClaim.Record
+) => {
+  const data = await atProtoAgent.com.atproto.repo.createRecord({
+    repo: atProtoAgent.assertDid,
+    collection: Collections.claim,
+    record,
+  });
+  return data;
+};
+
 export const updateHypercert = async (
   rkey: string,
   atProtoAgent: Agent,

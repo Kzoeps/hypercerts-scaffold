@@ -5,22 +5,20 @@ import { BlobRef } from "@atproto/lexicon";
 import { useState } from "react";
 import { toast } from "sonner";
 import HypercertsBaseForm, {
-    HypercertRecordForm,
+  HypercertRecordForm,
 } from "./hypercerts-base-form";
+import { createHypercert, uploadFile } from "@/lib/queries";
 
 export interface IHypercertsCreateFormProps {
   setHypercertId: (id: string) => void;
-  hypercertId?: string;
   nextStepper: () => void;
 }
 
 export default function HypercertsCreateForm({
   setHypercertId,
-  hypercertId,
   nextStepper,
 }: IHypercertsCreateFormProps) {
   const { atProtoAgent, session } = useOAuthContext();
-  const [step, setStep] = useState<number>(1);
   const [creating, setCreating] = useState(false);
 
   const handleCreate = async (
@@ -37,13 +35,9 @@ export default function HypercertsCreateForm({
         workTimeFrameFrom,
         workTimeFrameTo,
       } = certInfo;
-      let uploadedBlob: BlobRef | null = null;
+      let uploadedBlob: BlobRef | undefined = undefined;
       const image = certInfo.image;
-      if (image) {
-        const blob = new Blob([image!], { type: image?.type });
-        const response = await atProtoAgent.com.atproto.repo.uploadBlob(blob);
-        uploadedBlob = response.data.blob;
-      }
+      uploadedBlob = await uploadFile(atProtoAgent, image);
       const record = {
         $type: "org.hypercerts.claim",
         title,
@@ -54,16 +48,10 @@ export default function HypercertsCreateForm({
         workTimeFrameTo,
         createdAt: new Date().toISOString(),
       };
-      if (
-        HypercertRecord.isRecord(record) &&
-        HypercertRecord.validateRecord(record).success
-      ) {
-        const response = await atProtoAgent.com.atproto.repo.createRecord({
-          rkey: new Date().getTime().toString(),
-          record,
-          collection: "org.hypercerts.claim",
-          repo: atProtoAgent.assertDid,
-        });
+      const isProperRecord = HypercertRecord.isRecord(record);
+      const validation = HypercertRecord.validateRecord(record);
+      if (isProperRecord && validation.success) {
+        const response = await createHypercert(atProtoAgent, record);
         const uriInfo = parseAtUri(response.data.uri);
         if (uriInfo?.rkey) {
           setHypercertId(uriInfo?.rkey);
@@ -73,7 +61,6 @@ export default function HypercertsCreateForm({
           nextStepper();
         }
       } else {
-        const validation = HypercertRecord.validateRecord(record);
         if (!validation.success) {
           toast.error(validation.error.message);
         } else {
