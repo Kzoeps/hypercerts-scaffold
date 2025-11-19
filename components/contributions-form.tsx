@@ -15,12 +15,14 @@ import {
   validateHypercert,
 } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
-import { Plus, X } from "lucide-react";
+import { ProfileView } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
+import { Trash } from "lucide-react";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import { DatePicker } from "./date-range-picker";
 import FormFooter from "./form-footer";
 import FormInfo from "./form-info";
+import UserAvatar from "./user-avatar";
 import UserSelection from "./user-selection";
 
 export default function HypercertContributionForm({
@@ -34,16 +36,27 @@ export default function HypercertContributionForm({
 }) {
   const { atProtoAgent } = useOAuthContext();
   const [role, setRole] = useState("");
-  const [contributors, setContributors] = useState([""]);
+  const [contributors, setContributors] = useState<ProfileView[]>([]);
   const [description, setDescription] = useState("");
   const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date>();
   const [workTimeframeTo, setWorkTimeframeTo] = useState<Date>();
   const [saving, setSaving] = useState(false);
-  const addContributor = () => setContributors((arr) => [...arr, ""]);
-  const removeContributor = (index: number) =>
-    setContributors((arr) => arr.filter((_, idx) => idx !== index));
-  const updateContributor = (index: number, value: string) =>
-    setContributors((arr) => arr.map((v, i) => (i === index ? value : v)));
+
+  const addContributor = (user: ProfileView) => {
+    const isAdded = contributors.find(
+      (contributor) => contributor.did === user.did
+    );
+    if (!isAdded) {
+      setContributors((prev) => [...prev, user]);
+    }
+  };
+
+  const removeContributor = (user: ProfileView) => {
+    const filtered = contributors.filter(
+      (contributor) => contributor.did !== user.did
+    );
+    setContributors(filtered);
+  };
 
   const handleContributionCreation = async (
     hypercertRef: ReturnType<typeof buildStrongRef>
@@ -53,7 +66,9 @@ export default function HypercertContributionForm({
       $type: "org.hypercerts.claim.contribution",
       hypercert: hypercertRef || undefined,
       role,
-      contributors: contributors.filter((c) => c.trim() !== ""),
+      contributors: contributors
+        .filter((contributor) => !!contributor)
+        .map(({ did }) => did),
       description: description || undefined,
       workTimeframeFrom: workTimeframeFrom?.toISOString(),
       workTimeframeTo: workTimeframeTo?.toISOString(),
@@ -136,45 +151,32 @@ export default function HypercertContributionForm({
             required
           />
         </div>
-        <div className="space-y-2">
-          <UserSelection />
-        </div>
+        <div className="space-y-2"></div>
 
         <div className="space-y-2">
           <Label>Contributors (DIDs) *</Label>
           <div className="space-y-2">
-            {contributors.map((contributor, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  placeholder="did:plc:123..."
-                  value={contributor}
-                  onChange={(e) => updateContributor(index, e.target.value)}
-                  required
-                />
-                {contributors.length > 1 && (
+            <UserSelection onUserSelect={addContributor} />
+            <div className="flex flex-col gap-2">
+              {contributors.map((contributor) => (
+                <div
+                  key={contributor.did}
+                  className="flex justify-between gap-4 border p-2 rounded-md"
+                >
+                  <UserAvatar user={contributor} />
                   <Button
+                    onClick={() => removeContributor(contributor)}
+                    variant={"outline"}
+                    size={"icon"}
+                    aria-label="delete"
                     type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => removeContributor(index)}
-                    aria-label={`Remove contributor ${index + 1}`}
                   >
-                    <X className="h-4 w-4" />
+                    <Trash />
                   </Button>
-                )}
-              </div>
-            ))}
+                </div>
+              ))}
+            </div>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addContributor}
-            className="mt-2"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Contributor
-          </Button>
         </div>
 
         <div className="space-y-2">
