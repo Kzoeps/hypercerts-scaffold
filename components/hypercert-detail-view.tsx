@@ -19,7 +19,6 @@ export default function HypercertDetailsView({
           <h2 className="text-xl font-semibold">
             {record.title || "Untitled"}
           </h2>
-          <Badge variant="outline">View Only</Badge>
         </div>
         {record.shortDescription ? (
           <p className="text-sm text-muted-foreground mt-1">

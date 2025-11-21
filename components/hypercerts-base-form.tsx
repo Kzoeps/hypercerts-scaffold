@@ -36,29 +36,16 @@ export default function HypercertsBaseForm({
   updateActions,
   certInfo,
 }: HypercertsBaseFormProps) {
+  const initialWorkScope = certInfo?.workScope
+    .split(",")
+    .map((scope) => scope.trim());
   const [title, setTitle] = useState(certInfo?.title || "");
   const [backgroundImage, setBackgroundImage] = useState<File | undefined>();
   const [shortDescription, setShortDescription] = useState(
     certInfo?.shortDescription || ""
   );
   const [buttonClicked, setButtonClicked] = useState<"saveNext" | "create">();
-
-  const [workScope, setWorkScope] = useState<string[]>(() => {
-    const raw = certInfo?.workScope as unknown;
-
-    if (Array.isArray(raw)) {
-      return raw.map((w) => String(w)).filter(Boolean);
-    }
-
-    if (typeof raw === "string" && raw.trim().length > 0) {
-      return raw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-    return [""];
-  });
-
+  const [workScope, setWorkScope] = useState<string[]>(initialWorkScope || []);
   const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date | null>(
     certInfo?.workTimeFrameFrom ? new Date(certInfo?.workTimeFrameFrom) : null
   );

@@ -11,7 +11,7 @@ export default function FormFooter({
   saving,
 }: {
   onBack?: () => void;
-  onSkip?: () => void; // you use this as "Skip" or "Next" depending on step
+  onSkip?: () => void; 
   submitLabel: string;
   savingLabel: string;
   saving: boolean;

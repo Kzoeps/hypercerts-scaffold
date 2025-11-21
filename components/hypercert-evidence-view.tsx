@@ -69,18 +69,18 @@ export default function EvidenceView({
 
   return (
     <div className="space-y-4">
-      {evidenceList.map((evidence, idx) => {
-        const record = evidence.value;
+      {evidenceList.map((evidence) => {
+        const evidenceRecord = evidence.value;
         return (
-          <Card key={idx} className="border">
+          <Card key={evidence.uri} className="border">
             <CardContent className="py-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Title" value={record.title || "—"} />
+                <Field label="Title" value={evidenceRecord.title || "—"} />
                 <Field
                   label="Created At"
                   value={
-                    record.createdAt
-                      ? new Date(record.createdAt).toLocaleString()
+                    evidenceRecord.createdAt
+                      ? new Date(evidenceRecord.createdAt).toLocaleString()
                       : "—"
                   }
                 />
@@ -88,21 +88,21 @@ export default function EvidenceView({
                 <div className="md:col-span-2">
                   <LabelSmall>Short Description</LabelSmall>
                   <p className="text-sm whitespace-pre-wrap">
-                    {record.shortDescription || "—"}
+                    {evidenceRecord.shortDescription || "—"}
                   </p>
                 </div>
 
                 <div className="md:col-span-2">
                   <LabelSmall>Detailed Description</LabelSmall>
                   <p className="text-sm whitespace-pre-wrap">
-                    {record.description || "—"}
+                    {evidenceRecord.description || "—"}
                   </p>
                 </div>
 
                 <div className="md:col-span-2">
                   <LabelSmall>Evidence Content</LabelSmall>
                   <BlobDisplay
-                    content={record.content}
+                    content={evidenceRecord.content}
                     did={atProtoAgent?.assertDid}
                   />
                 </div>

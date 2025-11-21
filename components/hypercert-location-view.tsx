@@ -69,7 +69,7 @@ export default function LocationView({
     );
   }
 
-  const record = location.value;
+  const locationRecord = location.value;
   return (
     <div className="space-y-4">
       <Card className="border">
@@ -77,36 +77,36 @@ export default function LocationView({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field
               label="Location Protocol Version"
-              value={record.lpVersion || "—"}
+              value={locationRecord.lpVersion || "—"}
             />
             <Field
               label="Spatial Reference System (SRS)"
-              value={record.srs || "—"}
+              value={locationRecord.srs || "—"}
             />
 
-            <Field label="Location Type" value={record.locationType || "—"} />
+            <Field label="Location Type" value={locationRecord.locationType || "—"} />
             <Field
               label="Created At"
               value={
-                record.createdAt
-                  ? new Date(record.createdAt).toLocaleString()
+                locationRecord.createdAt
+                  ? new Date(locationRecord.createdAt).toLocaleString()
                   : "—"
               }
             />
 
-            <Field label="Location Name" value={record.name || "—"} />
+            <Field label="Location Name" value={locationRecord.name || "—"} />
 
             <div className="md:col-span-2">
               <LabelSmall>Location Description</LabelSmall>
               <p className="text-sm whitespace-pre-wrap">
-                {record.description || "—"}
+                {locationRecord.description || "—"}
               </p>
             </div>
 
             <div className="md:col-span-2">
               <LabelSmall>Location Data</LabelSmall>
               <BlobDisplay
-                content={record.location}
+                content={locationRecord.location}
                 did={atProtoAgent?.assertDid}
               />
             </div>
