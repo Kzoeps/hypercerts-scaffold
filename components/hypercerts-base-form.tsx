@@ -45,7 +45,9 @@ export default function HypercertsBaseForm({
     certInfo?.shortDescription || ""
   );
   const [buttonClicked, setButtonClicked] = useState<"saveNext" | "create">();
-  const [workScope, setWorkScope] = useState<string[]>(initialWorkScope || []);
+  const [workScope, setWorkScope] = useState<string[]>(
+    initialWorkScope || [""]
+  );
   const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date | null>(
     certInfo?.workTimeFrameFrom ? new Date(certInfo?.workTimeFrameFrom) : null
   );
@@ -117,7 +119,7 @@ export default function HypercertsBaseForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <Label htmlFor="title">Hypercert Name</Label>
+        <Label htmlFor="title">Hypercert Name *</Label>
         <Input
           id="title"
           onChange={(e) => setTitle(e.target.value)}
@@ -128,7 +130,7 @@ export default function HypercertsBaseForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="description">Short Description</Label>
+        <Label htmlFor="description">Short Description * </Label>
         <Textarea
           onChange={(e) => setShortDescription(e.target.value)}
           id="description"
@@ -152,7 +154,7 @@ export default function HypercertsBaseForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="workScope">Work Scope Tags</Label>
+        <Label htmlFor="workScope">Work Scope Tags * </Label>
         <div id="workScope" className="flex w-full flex-col gap-2">
           {workScope.map((value, index) => (
             <div key={index} className="flex w-full justify-between gap-2">
