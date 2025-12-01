@@ -1,4 +1,4 @@
-import type * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim";
+import type * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim/activity";
 import type * as HypercertContribution from "@/lexicons/types/org/hypercerts/claim/contribution";
 import type * as HypercertEvidence from "@/lexicons/types/org/hypercerts/claim/evidence";
 import type * as HypercertRights from "@/lexicons/types/org/hypercerts/claim/rights";
@@ -40,7 +40,7 @@ export type HypercertContributionData = Omit<
 };
 
 export enum Collections {
-  claim = "org.hypercerts.claim",
+  claim = "org.hypercerts.claim.activity",
   contribution = "org.hypercerts.claim.contribution",
   evidence = "org.hypercerts.claim.evidence",
   location = "app.certified.location",

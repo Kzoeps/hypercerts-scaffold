@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ContributionsView from "@/components/hypercert-contribution-view";
 import HypercertDetailsView from "@/components/hypercert-detail-view";
-import { HypercertRecordData } from "@/lib/types";
+import { Collections, HypercertRecordData } from "@/lib/types";
 import EvidenceView from "@/components/hypercert-evidence-view";
 import RightsView from "@/components/hypercert-rights-view";
 import LocationView from "@/components/hypercert-location-view";
@@ -36,7 +36,7 @@ export default function HypercertDetailsPage() {
       try {
         const response = await atProtoAgent.com.atproto.repo.getRecord({
           repo: atProtoAgent.assertDid,
-          collection: "org.hypercerts.claim",
+          collection: Collections.claim,
           rkey: hypercertId,
         });
         if (!cancelled) setCertData(response?.data as HypercertRecordData);
