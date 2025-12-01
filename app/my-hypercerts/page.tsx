@@ -2,7 +2,7 @@
 
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import Image from "next/image";
-import { Record as Hypercert } from "@/lexicons/types/org/hypercerts/claim";
+import { Record as Hypercert } from "@/lexicons/types/org/hypercerts/claim/activity";
 import { useEffect, useState } from "react";
 import {
   Card,
