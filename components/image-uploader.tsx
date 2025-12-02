@@ -70,7 +70,7 @@ export default function ImageUploader({
             <input
               ref={inputRef}
               type="file"
-              accept="image/*"
+              accept="image/png, image/jpeg, image/jpg"
               className="hidden"
               onChange={handleFileChange}
             />
@@ -81,7 +81,7 @@ export default function ImageUploader({
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/png, image/jpeg, image/jpg"
           className="hidden"
           onChange={handleFileChange}
         />

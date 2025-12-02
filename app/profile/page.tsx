@@ -1,18 +1,18 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, FormEvent } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import Image from "next/image";
 
-import type { AppBskyActorDefs } from "@atproto/api"; // if you have the typed client
 import ImageUploader from "@/components/image-uploader";
+import { uploadFile } from "@/lib/queries";
+import { AppBskyActorDefs } from "@atproto/api"; // if you have the typed client
 
 export default function ProfilePage() {
   const { atProtoAgent, session } = useOAuthContext();
@@ -79,16 +79,30 @@ export default function ProfilePage() {
 
     try {
       setSaving(true);
-      console.log("Saving profile payload:", {
-        displayName,
+      let uploadedBanner;
+      let uploadedAvatar;
+      if (bannerImage) {
+        uploadedBanner = await uploadFile(atProtoAgent, bannerImage);
+      }
+      if (avatarImage) {
+        uploadedAvatar = await uploadFile(atProtoAgent, avatarImage);
+      }
+      const record = {
+        $type: "app.bsky.actor.profile",
         description,
+        displayName,
         website,
         pronouns,
-        avatarUrl,
-        bannerUrl,
+        banner: uploadedBanner ? { $type: "blob", ...uploadedBanner } : null,
+        avatar: uploadedAvatar ? { $type: "blob", ...uploadedAvatar } : null,
+      };
+      await atProtoAgent.com.atproto.repo.putRecord({
+        repo: atProtoAgent.assertDid,
+        collection: "app.bsky.actor.profile",
+        rkey: "self",
+        record,
       });
-
-      toast.success("Profile saved");
+      toast.success("Profile successfully updated");
     } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Failed to save profile");
@@ -118,8 +132,12 @@ export default function ProfilePage() {
             imageUrl={bannerUrl}
             onFileSelect={(file) => {
               const localUrl = URL.createObjectURL(file);
-              setBannerUrl(localUrl);
-              setBannerImage(file);
+              if (file.size <= 1000000) {
+                setBannerUrl(localUrl);
+                setBannerImage(file);
+              } else {
+                toast.error("Banner image must be less than 1MB");
+              }
             }}
           />
         </div>
@@ -131,9 +149,13 @@ export default function ProfilePage() {
             aspect="square"
             imageUrl={avatarUrl}
             onFileSelect={(file) => {
-              const localUrl = URL.createObjectURL(file);
-              setAvatarUrl(localUrl);
-              setAvatarImage(file);
+              if (file.size <= 1000000) {
+                const localUrl = URL.createObjectURL(file);
+                setAvatarUrl(localUrl);
+                setAvatarImage(file);
+              } else {
+                toast.error("Banner image must be less than 1MB");
+              }
             }}
           />
         </div>
