@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import ImageUploader from "@/components/image-uploader";
 import { uploadFile } from "@/lib/queries";
-import { AppBskyActorDefs } from "@atproto/api"; // if you have the typed client
 
 export default function ProfilePage() {
   const { atProtoAgent, session } = useOAuthContext();
@@ -20,10 +19,6 @@ export default function ProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] =
-    useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
-
-  // Local editable fields
   const [displayName, setDisplayName] = useState("");
   const [description, setDescription] = useState("");
   const [website, setWebsite] = useState("");
@@ -46,30 +41,22 @@ export default function ProfilePage() {
         const userProfile = await atProtoAgent.app.bsky.actor.getProfile({
           actor: atProtoAgent.assertDid,
         });
-
         const value = userProfile?.data;
-        console.log(value);
         if (value) {
-          setProfile(value as AppBskyActorDefs.ProfileViewDetailed);
-
-          setDisplayName(value.displayName ?? "");
-          setDescription(value.description ?? "");
-          setWebsite(value.website || ""); // TODO: hydrate from facets/links if you use them
-          setPronouns(value.pronouns || ""); // TODO: hydrate from custom storage if you have one
-          setAvatarUrl(value.avatar ?? "");
-          setBannerUrl(value.banner ?? "");
-        } else {
-          setProfile(null);
+          setDisplayName(value.displayName || "");
+          setDescription(value.description || "");
+          setWebsite(value.website || "");
+          setPronouns(value.pronouns || "");
+          setAvatarUrl(value.avatar || "");
+          setBannerUrl(value.banner || "");
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
         toast.error("Failed to load profile");
-        setProfile(null);
       } finally {
         setLoading(false);
       }
     }
-
     getProfile();
   }, [atProtoAgent, session, router]);
 
@@ -124,7 +111,6 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-semibold">Profile</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Banner */}
         <div className="space-y-2">
           <ImageUploader
             label="Banner"
@@ -142,7 +128,6 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* Avatar */}
         <div className="space-y-2">
           <ImageUploader
             label="Avatar"
@@ -160,7 +145,6 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* Display Name */}
         <div className="space-y-2">
           <Label htmlFor="displayName">Display Name</Label>
           <Input
@@ -171,7 +155,6 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* Bio / Description */}
         <div className="space-y-2">
           <Label htmlFor="description">Bio</Label>
           <Textarea
@@ -183,7 +166,6 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* Website */}
         <div className="space-y-2">
           <Label htmlFor="website">Website</Label>
           <Input
@@ -195,7 +177,6 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* Pronouns */}
         <div className="space-y-2">
           <Label htmlFor="pronouns">Pronouns</Label>
           <Input
