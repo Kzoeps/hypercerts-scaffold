@@ -117,13 +117,13 @@ export default function HypercertContributionForm({
     e.preventDefault();
     if (!atProtoAgent) return;
     setSaving(true);
-    const hypercertInfo = await getHypercert(hypercertId, atProtoAgent);
-    const hypercertRef = buildStrongRef(
-      hypercertInfo.data.cid,
-      hypercertInfo.data.uri
-    );
-    const hypercertRecord = (hypercertInfo.data.value || {}) as Claim.Record;
     try {
+      const hypercertInfo = await getHypercert(hypercertId, atProtoAgent);
+      const hypercertRef = buildStrongRef(
+        hypercertInfo.data.cid,
+        hypercertInfo.data.uri
+      );
+      const hypercertRecord = (hypercertInfo.data.value || {}) as Claim.Record;
       const contributionData = await handleContributionCreation(hypercertRef);
       await handleHypercertUpdate(contributionData, hypercertRecord);
     } catch (error) {
