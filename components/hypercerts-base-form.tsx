@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import * as Hypercert from "@/lexicons/types/org/hypercerts/claim";
+import * as Hypercert from "@/lexicons/types/org/hypercerts/claim/activity";
 import { Label } from "@radix-ui/react-label";
 import { PlusIcon, XIcon } from "lucide-react";
 import { FormEventHandler, useState } from "react";

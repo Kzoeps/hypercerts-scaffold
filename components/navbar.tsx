@@ -45,7 +45,18 @@ export default function Navbar() {
       <div className="flex h-14 items-center justify-end gap-3 px-4 max-w-7xl mx-auto">
         {isSignedIn ? (
           <div className="gap-4 flex items-center">
-            <Link href={`/my-hypercerts`} className="underline hover:text-gray-500">My Hypercerts</Link>
+            <Link href={`/create`} className="underline hover:text-gray-500">
+              Create
+            </Link>
+            <Link href={`/profile`} className="underline hover:text-gray-500">
+              Profile
+            </Link>
+            <Link
+              href={`/my-hypercerts`}
+              className="underline hover:text-gray-500"
+            >
+              My Hypercerts
+            </Link>
             {userHandle && (
               <span className="text-sm text-muted-foreground">
                 @{userHandle}

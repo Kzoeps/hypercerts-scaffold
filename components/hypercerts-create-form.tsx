@@ -1,4 +1,4 @@
-import * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim";
+import * as HypercertRecord from "@/lexicons/types/org/hypercerts/claim/activity";
 import { parseAtUri } from "@/lib/utils";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { BlobRef } from "@atproto/lexicon";
@@ -9,6 +9,7 @@ import HypercertsBaseForm, {
 } from "./hypercerts-base-form";
 import { createHypercert, uploadFile } from "@/lib/queries";
 import FormInfo from "./form-info";
+import { Collections } from "@/lib/types";
 
 export interface IHypercertsCreateFormProps {
   setHypercertId: (id: string) => void;
@@ -40,7 +41,7 @@ export default function HypercertsCreateForm({
       const image = certInfo.image;
       uploadedBlob = await uploadFile(atProtoAgent, image);
       const record = {
-        $type: "org.hypercerts.claim",
+        $type: Collections.claim,
         title,
         shortDescription,
         workScope,

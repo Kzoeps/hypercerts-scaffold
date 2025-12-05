@@ -2,7 +2,7 @@
 
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import Image from "next/image";
-import { Record as Hypercert } from "@/lexicons/types/org/hypercerts/claim";
+import { Record as Hypercert } from "@/lexicons/types/org/hypercerts/claim/activity";
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -16,6 +16,7 @@ import { getBlobURL, parseAtUri } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Collections } from "@/lib/types";
 
 export default function MyHypercertsPage() {
   const { atProtoAgent, session } = useOAuthContext();
@@ -31,7 +32,7 @@ export default function MyHypercertsPage() {
       try {
         const response = await atProtoAgent.com.atproto.repo.listRecords({
           repo: atProtoAgent.assertDid,
-          collection: "org.hypercerts.claim",
+          collection: Collections.claim,
           limit: 100,
         });
 
