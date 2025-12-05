@@ -116,6 +116,7 @@ export default function HypercertContributionForm({
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (!atProtoAgent) return;
+    setSaving(true);
     const hypercertInfo = await getHypercert(hypercertId, atProtoAgent);
     const hypercertRef = buildStrongRef(
       hypercertInfo.data.cid,
@@ -123,7 +124,6 @@ export default function HypercertContributionForm({
     );
     const hypercertRecord = (hypercertInfo.data.value || {}) as Claim.Record;
     try {
-      setSaving(true);
       const contributionData = await handleContributionCreation(hypercertRef);
       await handleHypercertUpdate(contributionData, hypercertRecord);
     } catch (error) {
