@@ -8,9 +8,10 @@ import {
   InMemorySessionStore,
   InMemoryStateStore,
 } from "@hypercerts-org/sdk-core";
+import { RedisSessionStore, RedisStateStore } from "./redis-state-store";
 
-export const sessionStore = new InMemorySessionStore();
-export const stateStore = new InMemoryStateStore();
+export const sessionStore = new RedisSessionStore();
+export const stateStore = new RedisStateStore();
 
 console.log("Session Store", sessionStore);
 console.log("State Store", stateStore);

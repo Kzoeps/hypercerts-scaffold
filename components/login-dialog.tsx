@@ -10,7 +10,6 @@ import { Button } from "./ui/button";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { FormEventHandler, useState } from "react";
 import { PDS_URL } from "@/utils/constants";
-import { login } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 
 export default function LoginDialog() {

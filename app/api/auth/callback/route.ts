@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 1 week
       path: "/",
     });
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
   } catch (e) {
     console.log("Authentication failed:", e);
     return NextResponse.json(
