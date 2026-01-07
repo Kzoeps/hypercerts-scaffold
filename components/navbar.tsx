@@ -15,23 +15,34 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function Navbar({ isSignedIn }: { isSignedIn: boolean }) {
   const userHandle = useUserHandle();
   const [handle, setHandle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    await fetch(`/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ handle }),
-    });
-    setOpen(false);
-    setHandle("");
+    setLoading(true);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ handle }),
+      });
+      const data = await response.json();
+      router.push(data.authUrl);
+      setOpen(false);
+      setHandle("");
+    } catch (e) {
+      console.error(e);
+      toast.error("Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const redirectToAccountCreation = () => {
@@ -72,7 +83,7 @@ export default function Navbar({ isSignedIn }: { isSignedIn: boolean }) {
         ) : (
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-              <Button variant="default" size="sm">
+              <Button disabled={loading} variant="default" size="sm">
                 Login
               </Button>
             </PopoverTrigger>

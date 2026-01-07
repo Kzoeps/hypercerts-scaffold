@@ -13,20 +13,24 @@ import { PDS_URL } from "@/utils/constants";
 // import { useRouter } from "next/navigation";
 import { Spinner } from "./ui/spinner";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function LoginDialog() {
   const [handle, setHandle] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const { signIn } = useOAuthContext();
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ handle }),
       });
+      const data = await response.json();
+      router.push(data.authUrl);
     } catch (e) {
       console.error(e);
       toast.error("An error occurred while logging in.");

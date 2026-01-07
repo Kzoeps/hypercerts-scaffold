@@ -1,14 +1,10 @@
 import { createATProtoSDK } from "@hypercerts-org/sdk-core";
+import { RedisSessionStore, RedisStateStore } from "./redis-state-store";
 
 if (!process.env.ATPROTO_JWK_PRIVATE || !process.env.NEXT_PUBLIC_APP_URL) {
   throw new Error("Some environment vars missing");
 }
 
-import {
-  InMemorySessionStore,
-  InMemoryStateStore,
-} from "@hypercerts-org/sdk-core";
-import { RedisSessionStore, RedisStateStore } from "./redis-state-store";
 
 export const sessionStore = new RedisSessionStore();
 export const stateStore = new RedisStateStore();
