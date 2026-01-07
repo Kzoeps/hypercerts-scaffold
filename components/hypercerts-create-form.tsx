@@ -10,6 +10,8 @@ import HypercertsBaseForm, {
 import { createHypercert, uploadFile } from "@/lib/queries";
 import FormInfo from "./form-info";
 import { Collections } from "@/lib/types";
+import { title } from "process";
+import { createHypercertUsingSDK } from "@/lib/create-actions";
 
 export interface IHypercertsCreateFormProps {
   setHypercertId: (id: string) => void;
@@ -23,63 +25,87 @@ export default function HypercertsCreateForm({
   const { atProtoAgent, session } = useOAuthContext();
   const [creating, setCreating] = useState(false);
 
-  const handleCreate = async (
-    certInfo: HypercertRecordForm,
-    advance?: boolean
-  ) => {
+  const handleCreate = async (certInfo: HypercertRecordForm) => {
     try {
-      if (!atProtoAgent || !session) return;
       setCreating(true);
-      const {
-        title,
-        shortDescription,
-        workScope,
-        workTimeFrameFrom,
-        workTimeFrameTo,
-      } = certInfo;
-      let uploadedBlob: BlobRef | undefined = undefined;
-      const image = certInfo.image;
-      uploadedBlob = await uploadFile(atProtoAgent, image);
-      const record = {
-        $type: Collections.claim,
-        title,
-        shortDescription,
-        workScope,
-        image: uploadedBlob ? { $type: "smallBlob", ...uploadedBlob } : null,
-        workTimeFrameFrom,
-        workTimeFrameTo,
-        createdAt: new Date().toISOString(),
-      };
-      const isProperRecord = HypercertRecord.isRecord(record);
-      const validation = HypercertRecord.validateRecord(record);
-      if (isProperRecord && validation.success) {
-        const response = await createHypercert(atProtoAgent, record);
-        const uriInfo = parseAtUri(response.data.uri);
-        if (uriInfo?.rkey) {
-          setHypercertId(uriInfo?.rkey);
-        }
-        toast.success("Hypercert created successfully!");
-        if (advance) {
-          nextStepper();
-        }
-      } else {
-        if (!validation.success) {
-          toast.error(validation.error.message);
-        } else {
-          toast.error("Invalid hypercert data, please check your inputs.");
-        }
-      }
-    } catch (error) {
-      console.error("Error creating hypercert:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create hypercert please try again"
-      );
+      await createHypercertUsingSDK({
+        title: certInfo.title,
+        shortDescription: certInfo.shortDescription,
+        description: certInfo.shortDescription,
+        startDate: certInfo.workTimeFrameFrom,
+        endDate: certInfo.workTimeFrameTo,
+        rights: {
+          name: "All Rights Reserved",
+          type: "CC-BY-239",
+          description: "RIghts reserverd",
+        },
+      });
+      toast.success("Hypercert created successfully!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to create hypercert please try again");
     } finally {
       setCreating(false);
     }
   };
+
+  // const handleCreate = async (
+  //   certInfo: HypercertRecordForm,
+  //   advance?: boolean
+  // ) => {
+  //   try {
+  //     if (!atProtoAgent || !session) return;
+  //     setCreating(true);
+  //     const {
+  //       title,
+  //       shortDescription,
+  //       workScope,
+  //       workTimeFrameFrom,
+  //       workTimeFrameTo,
+  //     } = certInfo;
+  //     let uploadedBlob: BlobRef | undefined = undefined;
+  //     const image = certInfo.image;
+  //     uploadedBlob = await uploadFile(atProtoAgent, image);
+  //     const record = {
+  //       $type: Collections.claim,
+  //       title,
+  //       shortDescription,
+  //       workScope,
+  //       image: uploadedBlob ? { $type: "smallBlob", ...uploadedBlob } : null,
+  //       workTimeFrameFrom,
+  //       workTimeFrameTo,
+  //       createdAt: new Date().toISOString(),
+  //     };
+  //     const isProperRecord = HypercertRecord.isRecord(record);
+  //     const validation = HypercertRecord.validateRecord(record);
+  //     if (isProperRecord && validation.success) {
+  //       const response = await createHypercert(atProtoAgent, record);
+  //       const uriInfo = parseAtUri(response.data.uri);
+  //       if (uriInfo?.rkey) {
+  //         setHypercertId(uriInfo?.rkey);
+  //       }
+  //       toast.success("Hypercert created successfully!");
+  //       if (advance) {
+  //         nextStepper();
+  //       }
+  //     } else {
+  //       if (!validation.success) {
+  //         toast.error(validation.error.message);
+  //       } else {
+  //         toast.error("Invalid hypercert data, please check your inputs.");
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error creating hypercert:", error);
+  //     toast.error(
+  //       error instanceof Error
+  //         ? error.message
+  //         : "Failed to create hypercert please try again"
+  //     );
+  //   } finally {
+  //     setCreating(false);
+  //   }
+  // };
   return (
     <FormInfo
       description="These details need to be filled out to crete a hypercert."

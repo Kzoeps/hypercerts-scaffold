@@ -1,14 +1,17 @@
-"use client";
 import LoginDialog from "@/components/login-dialog";
 import Navbar from "@/components/navbar";
-import { useSession } from "./SessionProvider";
+import { getSession } from "@/lib/atproto-session";
 
-export function SignedInProvider({ children }: { children?: React.ReactNode }) {
-  const { session } = useSession();
+export async function SignedInProvider({
+  children,
+}: {
+  children?: React.ReactNode;
+}) {
+  const session = await getSession();
 
   return (
     <>
-      <Navbar />
+      <Navbar isSignedIn={!!session} />
       {session ? (
         <>{children}</>
       ) : (

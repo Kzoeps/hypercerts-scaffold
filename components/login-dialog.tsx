@@ -10,20 +10,29 @@ import { Button } from "./ui/button";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { FormEventHandler, useState } from "react";
 import { PDS_URL } from "@/utils/constants";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
+import { Spinner } from "./ui/spinner";
+import { toast } from "sonner";
 
 export default function LoginDialog() {
   const [handle, setHandle] = useState("");
+  const [loading, setLoading] = useState(false);
   const { signIn } = useOAuthContext();
-  const router = useRouter();
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ handle }),
-    });
-    router.push((await response.json()).authUrl);
+    setLoading(true);
+    try {
+      await fetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ handle }),
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error("An error occurred while logging in.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const redirectToAccountCreation = () => {
@@ -41,8 +50,12 @@ export default function LoginDialog() {
         </InputGroupAddon>
       </InputGroup>
 
-      <Button type="submit">Login</Button>
+      <Button type="submit" disabled={loading}>
+        {loading && <Spinner />}
+        Login
+      </Button>
       <Button
+        disabled={loading}
         onClick={redirectToAccountCreation}
         variant={"link"}
         type="button"

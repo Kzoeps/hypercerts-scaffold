@@ -2,7 +2,6 @@
 
 import { AtSignIcon } from "lucide-react";
 import { useState, FormEventHandler } from "react";
-import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { useUserHandle } from "@/queries/use-user-handle";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,29 +14,33 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { PDS_URL } from "@/utils/constants";
 import Link from "next/link";
 
-export default function Navbar() {
-  const { isSignedIn, signIn, signOut, isLoading } = useOAuthContext();
+export default function Navbar({ isSignedIn }: { isSignedIn: boolean }) {
   const userHandle = useUserHandle();
   const [handle, setHandle] = useState("");
   const [open, setOpen] = useState(false);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    await signIn(handle);
+    await fetch(`/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ handle }),
+    });
     setOpen(false);
     setHandle("");
   };
 
   const redirectToAccountCreation = () => {
-    signIn(PDS_URL);
     setOpen(false);
   };
 
   const handleLogout = async () => {
-    await signOut();
+    // TODO implement revoke session
+    // await signOut();
   };
 
   return (
@@ -62,19 +65,14 @@ export default function Navbar() {
                 @{userHandle}
               </span>
             )}
-            <Button
-              onClick={handleLogout}
-              disabled={isLoading}
-              variant="outline"
-              size="sm"
-            >
+            <Button onClick={handleLogout} variant="outline" size="sm">
               Logout
             </Button>
           </div>
         ) : (
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-              <Button variant="default" size="sm" disabled={isLoading}>
+              <Button variant="default" size="sm">
                 Login
               </Button>
             </PopoverTrigger>
