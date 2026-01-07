@@ -3,8 +3,17 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import * as HypercertClaim from "@/lexicons/types/org/hypercerts/claim/activity";
 import * as Evidence from "@/lexicons/types/org/hypercerts/claim/evidence";
+
 import { createEvidence, getHypercert, updateHypercert } from "@/lib/queries";
 import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { ComAtprotoRepoCreateRecord } from "@atproto/api";
@@ -17,12 +26,18 @@ import { buildStrongRef } from "@/lib/utils";
 
 type ContentMode = "link" | "file";
 
+const RELATION_TYPES: Evidence.Record["relationType"][] = [
+  "supports",
+  "challenges",
+  "clarifies",
+];
+
 export default function HypercertEvidenceForm({
-  hypercertId,
+  hypercertUri: hypercertId,
   onNext,
   onBack,
 }: {
-  hypercertId: string;
+  hypercertUri: string;
   onNext?: () => void;
   onBack?: () => void;
 }) {
@@ -31,6 +46,10 @@ export default function HypercertEvidenceForm({
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
+  const [relationType, setRelationType] = useState<
+    Evidence.Record["relationType"] | ""
+  >("supports");
+
   const [evidenceMode, setEvidenceMode] = useState<ContentMode>("link");
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
@@ -41,25 +60,73 @@ export default function HypercertEvidenceForm({
     setEvidenceFile(file ?? null);
   };
 
+  const validateTextFields = () => {
+    const titleTrimmed = title.trim();
+
+    if (!titleTrimmed) {
+      toast.error("Title is required.");
+      return false;
+    }
+    if (titleTrimmed.length > 256) {
+      toast.error("Title must be at most 256 characters.");
+      return false;
+    }
+
+    if (!shortDescription.trim()) {
+      toast.error("Short description is required.");
+      return false;
+    }
+    if (shortDescription.length > 3000) {
+      toast.error("Short description must be at most 3000 characters.");
+      return false;
+    }
+
+    if (description.length > 30000) {
+      toast.error("Detailed description must be at most 30000 characters.");
+      return false;
+    }
+
+    if (relationType && !RELATION_TYPES.includes(relationType)) {
+      toast.error("Invalid relation type.");
+      return false;
+    }
+
+    return true;
+  };
+
   const getEvidenceContent = async () => {
     if (evidenceMode === "link") {
       if (!evidenceUrl.trim()) {
         toast.error("Please provide a link to the evidence.");
-        setSaving(false);
         return;
       }
-      return { $type: "app.certified.defs#uri", value: evidenceUrl.trim() };
-    } else {
-      if (!evidenceFile) {
-        toast.error("Please upload an evidence file.");
-        setSaving(false);
-        return;
-      }
-      const blob = new Blob([evidenceFile], { type: evidenceFile.type });
-      const response = await atProtoAgent!.com.atproto.repo.uploadBlob(blob);
-      const uploadedBlob = response.data.blob;
-      return { $type: "smallBlob", ...uploadedBlob };
+      return { $type: "org.hypercerts.defs#uri", value: evidenceUrl.trim() };
     }
+
+    if (!evidenceFile) {
+      toast.error("Please upload an evidence file.");
+      return;
+    }
+
+    const blob = new Blob([evidenceFile], { type: evidenceFile.type });
+    const response = await atProtoAgent!.com.atproto.repo.uploadBlob(blob);
+    const uploadedBlob = response.data.blob;
+
+    return { $type: "org.hypercerts.defs#smallBlob", ...uploadedBlob };
+  };
+
+  const buildSubjectStrongRef = async () => {
+    const hypercertData = await getHypercert(hypercertId, atProtoAgent!);
+
+    const hypercertCid = hypercertData?.data?.cid;
+    const hypercertUri = hypercertData?.data?.uri;
+
+    if (!hypercertCid || !hypercertUri) {
+      toast.error("Unable to load hypercert reference for subject.");
+      return;
+    }
+
+    return buildStrongRef(hypercertCid, hypercertUri);
   };
 
   const buildUpdatedHyperCert = async (
@@ -70,32 +137,55 @@ export default function HypercertEvidenceForm({
 
     if (!evidenceCid || !evidenceURI) {
       toast.error("Failed to create evidence record");
-      setSaving(false);
       return;
     }
 
     const hypercertData = await getHypercert(hypercertId, atProtoAgent!);
+    const existingEvidence = hypercertData.data.value.evidence ?? [];
+
     const updatedHypercert = {
       ...hypercertData.data.value,
-      evidence: [buildStrongRef(evidenceCid, evidenceURI)],
+      evidence: [...existingEvidence, buildStrongRef(evidenceCid, evidenceURI)],
     };
+
     return updatedHypercert;
   };
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (!atProtoAgent) return;
+
     try {
       setSaving(true);
+
+      if (!validateTextFields()) {
+        setSaving(false);
+        return;
+      }
+
       const content = await getEvidenceContent();
-      const evidenceRecord = {
+      if (!content) {
+        setSaving(false);
+        return;
+      }
+
+      const subject = await buildSubjectStrongRef();
+      if (!subject) {
+        setSaving(false);
+        return;
+      }
+
+      const evidenceRecord: Evidence.Record = {
         $type: "org.hypercerts.claim.evidence",
+        subject,
         content,
-        title: title || undefined,
-        shortDescription,
-        description: description || undefined,
+        title: title.trim(),
+        shortDescription: shortDescription.trim(),
+        description: description.trim() || undefined,
+        relationType: relationType || undefined,
         createdAt: new Date().toISOString(),
-      } as Evidence.Record;
+      };
+
       const validation = Evidence.validateRecord(evidenceRecord);
       if (!validation.success) {
         toast.error(validation.error?.message || "Invalid evidence record");
@@ -104,13 +194,19 @@ export default function HypercertEvidenceForm({
       }
 
       const createResponse = await createEvidence(atProtoAgent, evidenceRecord);
+
       const updatedHypercert = await buildUpdatedHyperCert(createResponse);
-      if (!updatedHypercert) return;
+      if (!updatedHypercert) {
+        setSaving(false);
+        return;
+      }
+
       await updateHypercert(
         hypercertId,
         atProtoAgent,
         updatedHypercert as HypercertClaim.Record
       );
+
       toast.success("Evidence created and linked to hypercert!");
       onNext?.();
     } catch (error) {
@@ -124,22 +220,45 @@ export default function HypercertEvidenceForm({
   return (
     <FormInfo
       title="Add Hypercert Evidence"
-      description="Attach a link of file that backs up this hypercert claim"
+      description="Attach a link or file that backs up this hypercert claim"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="title">Title (Optional)</Label>
+          <Label htmlFor="title">Title *</Label>
           <Input
             id="title"
             placeholder="e.g., Audit report, Research paper, Demo video"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={256}
+            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="shortDescription">Short Description (Required)</Label>
+          <Label htmlFor="relationType">Relation Type *</Label>
+          <Select
+            value={relationType}
+            onValueChange={(val) =>
+              setRelationType(val as Evidence.Record["relationType"])
+            }
+          >
+            <SelectTrigger id="relationType">
+              <SelectValue placeholder="Choose how this evidence relates..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="supports">Supports</SelectItem>
+              <SelectItem value="clarifies">Clarifies</SelectItem>
+              <SelectItem value="challenges">Challenges</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Specify whether this evidence supports, clarifies, or challenges the claim.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="shortDescription">Short Description *</Label>
           <Textarea
             id="shortDescription"
             placeholder="Summarize what this evidence demonstrates..."
@@ -180,6 +299,7 @@ export default function HypercertEvidenceForm({
           urlHelpText="Paste a URL to a public resource (report, article, repo, video, etc.)."
           fileHelpText="Upload a supporting file (PDF, image, etc.). It will be stored as a blob."
         />
+
         <FormFooter
           onBack={onBack}
           onSkip={onNext}

@@ -40,32 +40,32 @@ export default function Home() {
           onBack={previousStepper}
         />
       )}
-      {step === 3 && hypercertId && (
+      {step === 3 && hypercertUri && (
         <HypercertEvidenceForm
-          hypercertId={hypercertId}
+          hypercertUri={hypercertUri}
           onNext={nextStepper}
           onBack={previousStepper}
         />
       )}
-      {step === 4 && hypercertId && (
+      {step === 4 && hypercertUri && (
         <HypercertLocationForm
           onNext={nextStepper}
           onBack={previousStepper}
-          hypercertId={hypercertId}
+          hypercertId={hypercertUri}
         />
       )}
-      {step === 5 && hypercertId && (
+      {step === 5 && hypercertUri && (
         <HypercertRightsForm
           onNext={nextStepper}
           onBack={previousStepper}
-          hypercertId={hypercertId}
+          hypercertId={hypercertUri}
         />
       )}
       {step === 6 && (
         <HypercertCompletionStep
           onCreateAnother={() => setStep(1)}
           onBack={previousStepper}
-          hypercertId={hypercertId}
+          hypercertId={hypercertUri}
         />
       )}
     </div>
