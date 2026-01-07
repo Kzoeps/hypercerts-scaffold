@@ -5,7 +5,6 @@ if (!process.env.ATPROTO_JWK_PRIVATE || !process.env.NEXT_PUBLIC_APP_URL) {
   throw new Error("Some environment vars missing");
 }
 
-
 export const sessionStore = new RedisSessionStore();
 export const stateStore = new RedisStateStore();
 
@@ -23,6 +22,9 @@ const sdk = createATProtoSDK({
   storage: {
     sessionStore,
     stateStore,
+  },
+  servers: {
+    pds: "https://shiitake.us-east.host.bsky.network",
   },
 });
 
