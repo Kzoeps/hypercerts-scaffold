@@ -17,6 +17,7 @@ import FormFooter from "./form-footer";
 import FormInfo from "./form-info";
 import LinkFileSelector from "./link-file-selector";
 import { Button } from "./ui/button";
+import { BaseHypercertFormProps } from "@/lib/types";
 
 type ContentMode = "link" | "file";
 
@@ -27,11 +28,10 @@ const RELATION_TYPES: HypercertEvidence["relationType"][] = [
 ];
 
 export default function HypercertEvidenceForm({
-  hypercertUri: hypercertId,
+  hypercertInfo,
   onNext,
   onBack,
-}: {
-  hypercertUri: string;
+}: BaseHypercertFormProps & {
   onNext?: () => void;
   onBack?: () => void;
 }) {
@@ -86,63 +86,6 @@ export default function HypercertEvidenceForm({
     return true;
   };
 
-  // const getEvidenceContent = async () => {
-  //   if (evidenceMode === "link") {
-  //     if (!evidenceUrl.trim()) {
-  //       toast.error("Please provide a link to the evidence.");
-  //       return;
-  //     }
-  //     return { $type: "org.hypercerts.defs#uri", value: evidenceUrl.trim() };
-  //   }
-
-  //   if (!evidenceFile) {
-  //     toast.error("Please upload an evidence file.");
-  //     return;
-  //   }
-
-  //   const blob = new Blob([evidenceFile], { type: evidenceFile.type });
-  //   const response = await atProtoAgent!.com.atproto.repo.uploadBlob(blob);
-  //   const uploadedBlob = response.data.blob;
-
-  //   return { $type: "org.hypercerts.defs#smallBlob", ...uploadedBlob };
-  // };
-
-  // const buildSubjectStrongRef = async () => {
-  //   const hypercertData = await getHypercert(hypercertId, atProtoAgent!);
-
-  //   const hypercertCid = hypercertData?.data?.cid;
-  //   const hypercertUri = hypercertData?.data?.uri;
-
-  //   if (!hypercertCid || !hypercertUri) {
-  //     toast.error("Unable to load hypercert reference for subject.");
-  //     return;
-  //   }
-
-  //   return buildStrongRef(hypercertCid, hypercertUri);
-  // };
-
-  // const buildUpdatedHyperCert = async (
-  //   evidenceData: ComAtprotoRepoCreateRecord.Response
-  // ) => {
-  //   const evidenceCid = evidenceData?.data?.cid;
-  //   const evidenceURI = evidenceData?.data?.uri;
-
-  //   if (!evidenceCid || !evidenceURI) {
-  //     toast.error("Failed to create evidence record");
-  //     return;
-  //   }
-
-  //   const hypercertData = await getHypercert(hypercertId, atProtoAgent!);
-  //   const existingEvidence = hypercertData.data.value.evidence ?? [];
-
-  //   const updatedHypercert = {
-  //     ...hypercertData.data.value,
-  //     evidence: [...existingEvidence, buildStrongRef(evidenceCid, evidenceURI)],
-  //   };
-
-  //   return updatedHypercert;
-  // };
-
   const handleAutofill = () => {
     setTitle("Audit Report: Impact Verification");
     setRelationType("supports");
@@ -165,7 +108,7 @@ export default function HypercertEvidenceForm({
     e.preventDefault();
     try {
       setSaving(true);
-      if (!validateTextFields()) {
+      if (!validateTextFields() || !hypercertInfo?.hypercertUri) {
         return;
       }
 
@@ -176,7 +119,7 @@ export default function HypercertEvidenceForm({
       if (relationType) {
         formData.append("relationType", relationType);
       }
-      formData.append("hypercertUri", hypercertId);
+      formData.append("hypercertUri", hypercertInfo?.hypercertUri);
 
       if (evidenceMode === "link") {
         if (!evidenceUrl.trim()) {

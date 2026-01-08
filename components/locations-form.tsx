@@ -4,11 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import * as Location from "@/lexicons/types/app/certified/location";
-import * as HypercertClaim from "@/lexicons/types/org/hypercerts/claim/activity";
-import { createLocation, getHypercert, updateHypercert } from "@/lib/queries";
-import { buildStrongRef, validateHypercert } from "@/lib/utils";
-import { useOAuthContext } from "@/providers/OAuthProviderSSR";
+import { BaseHypercertFormProps } from "@/lib/types";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import FormFooter from "./form-footer";
@@ -18,16 +14,13 @@ import LinkFileSelector from "./link-file-selector";
 type LocationContentMode = "link" | "file";
 
 export default function HypercertLocationForm({
-  hypercertUri,
+  hypercertInfo,
   onBack,
   onNext,
-}: {
-  hypercertUri: string;
+}: BaseHypercertFormProps & {
   onBack?: () => void;
   onNext?: () => void;
 }) {
-  const { atProtoAgent } = useOAuthContext();
-
   const [lpVersion, setLpVersion] = useState("1.0.0");
   const [srs, setSrs] = useState(
     "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
@@ -58,6 +51,9 @@ export default function HypercertLocationForm({
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
+    if (!hypercertInfo?.hypercertUri) {
+      return;
+    }
     try {
       setSaving(true);
       if (!lpVersion.trim()) {
@@ -96,13 +92,13 @@ export default function HypercertLocationForm({
       } else {
         formData.append("locationFile", locationFile as File);
       }
-      formData.append("hypercertUri", hypercertUri);
+      formData.append("hypercertUri", hypercertInfo?.hypercertUri);
       const response = await fetch("/api/certs/add-location", {
         method: "POST",
         body: formData,
       });
       const result = await response.json();
-      console.log(result)
+      console.log(result);
       toast.success("Location Added Successfully");
       onNext?.(); // Optional: leave commented until backend exists
     } catch (error) {

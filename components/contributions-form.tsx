@@ -2,19 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import * as Claim from "@/lexicons/types/org/hypercerts/claim/activity";
-import * as Contribution from "@/lexicons/types/org/hypercerts/claim/contribution";
-import {
-  createContribution,
-  getHypercert,
-  updateHypercert,
-} from "@/lib/queries";
-import {
-  buildStrongRef,
-  validateContribution,
-  validateHypercert,
-} from "@/lib/utils";
-import { useOAuthContext } from "@/providers/OAuthProviderSSR";
+import { addContribution } from "@/lib/create-actions";
+import { BaseHypercertFormProps } from "@/lib/types";
 import { ProfileView } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
 import { Trash } from "lucide-react";
 import { FormEventHandler, useState } from "react";
@@ -24,18 +13,15 @@ import FormFooter from "./form-footer";
 import FormInfo from "./form-info";
 import UserAvatar from "./user-avatar";
 import UserSelection from "./user-selection";
-import { addContribution } from "@/lib/create-actions";
 
 export default function HypercertContributionForm({
-  hypercertUri,
+  hypercertInfo,
   onBack,
   onNext,
-}: {
-  hypercertUri?: string;
+}: BaseHypercertFormProps & {
   onBack?: () => void;
   onNext?: () => void;
 }) {
-  const { atProtoAgent } = useOAuthContext();
   const [role, setRole] = useState("");
   const [contributors, setContributors] = useState<ProfileView[]>([]);
   const [description, setDescription] = useState("");
@@ -65,7 +51,7 @@ export default function HypercertContributionForm({
       .map(({ did }) => did);
     if (!mappedContributors.length) return;
     const contributionRecord = {
-      hypercertUri,
+      hypercertUri: hypercertInfo?.hypercertUri,
       role,
       contributors: mappedContributors,
       description: description || undefined,
@@ -76,45 +62,17 @@ export default function HypercertContributionForm({
     const res = await addContribution(contributionRecord);
 
     return res;
-
-    // const isValidContribution = validateContribution(contributionRecord);
-    // if (!isValidContribution.success || !mappedContributors.length) {
-    //   toast.error(isValidContribution.error || "Invalid contribution record");
-    //   return;
-    // }
-    // const response = await createContribution(atProtoAgent, contributionRecord);
   };
-
-  // const handleHypercertUpdate = async (
-  //   contributionData: Awaited<ReturnType<typeof handleContributionCreation>>,
-  //   hypercertRecord: Claim.Record
-  // ) => {
-  //   const contributionCid = contributionData?.data?.cid;
-  //   const contributionURI = contributionData?.data?.uri;
-  //   if (!contributionCid || !contributionURI) return;
-  //   const updatedHypercert = {
-  //     ...hypercertRecord,
-  //     contributions: [buildStrongRef(contributionCid, contributionURI)],
-  //   };
-  //   const isValidHypercert = validateHypercert(updatedHypercert);
-  //   if (!isValidHypercert.success) {
-  //     toast.error(isValidHypercert.error || "Invalid updated hypercert");
-  //     return;
-  //   }
-  //   await updateHypercert(
-  //     hypercertUri,
-  //     atProtoAgent!,
-  //     updatedHypercert as Claim.Record
-  //   );
-  //   toast.success("Contribution updated and linked!");
-  //   onNext?.();
-  // };
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
+    if (!hypercertInfo?.hypercertUri) {
+      return;
+    }
     setSaving(true);
     try {
       const contributionData = await handleContributionCreation();
+      console.log(contributionData);
       toast.success("Contribution created!");
       onNext?.();
     } catch (error) {
