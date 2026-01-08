@@ -25,6 +25,7 @@ export default function Home() {
       {step === 1 && (
         <HypercertsCreateForm
           setHypercertInfo={setHypercertInfo}
+          hypercertInfo={hypercertInfo}
           nextStepper={nextStepper}
         />
       )}
