@@ -24,8 +24,8 @@ importers:
         specifier: 0.10.0-beta.3
         version: 0.10.0-beta.3(@atproto/xrpc@0.7.7)
       '@hypercerts-org/sdk-core':
-        specifier: file:../hypercerts-sdk/packages/sdk-core/hypercerts-org-sdk-core-0.10.0-beta.2.tgz
-        version: file:../hypercerts-sdk/packages/sdk-core/hypercerts-org-sdk-core-0.10.0-beta.2.tgz(@atproto/xrpc@0.7.7)
+        specifier: file:vendor/hypercerts-org-sdk-core-0.10.0-beta.2.tgz
+        version: file:vendor/hypercerts-org-sdk-core-0.10.0-beta.2.tgz(@atproto/xrpc@0.7.7)
       '@radix-ui/react-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -430,8 +430,8 @@ packages:
     peerDependencies:
       '@atproto/xrpc': '*'
 
-  '@hypercerts-org/sdk-core@file:../hypercerts-sdk/packages/sdk-core/hypercerts-org-sdk-core-0.10.0-beta.2.tgz':
-    resolution: {integrity: sha512-1PMvUkyYZL9uYduAwL5ZnaedOkr2o+awAnfbujySKVq6i8182VW6THF15fyAgm3n5zuYOARy/Yimfp0bqxaGqA==, tarball: file:../hypercerts-sdk/packages/sdk-core/hypercerts-org-sdk-core-0.10.0-beta.2.tgz}
+  '@hypercerts-org/sdk-core@file:vendor/hypercerts-org-sdk-core-0.10.0-beta.2.tgz':
+    resolution: {integrity: sha512-1PMvUkyYZL9uYduAwL5ZnaedOkr2o+awAnfbujySKVq6i8182VW6THF15fyAgm3n5zuYOARy/Yimfp0bqxaGqA==, tarball: file:vendor/hypercerts-org-sdk-core-0.10.0-beta.2.tgz}
     version: 0.10.0-beta.2
 
   '@img/colour@1.0.0':
@@ -3524,7 +3524,7 @@ snapshots:
       '@atproto/xrpc': 0.7.7
       multiformats: 13.4.2
 
-  '@hypercerts-org/sdk-core@file:../hypercerts-sdk/packages/sdk-core/hypercerts-org-sdk-core-0.10.0-beta.2.tgz(@atproto/xrpc@0.7.7)':
+  '@hypercerts-org/sdk-core@file:vendor/hypercerts-org-sdk-core-0.10.0-beta.2.tgz(@atproto/xrpc@0.7.7)':
     dependencies:
       '@atproto/api': 0.17.7
       '@atproto/lexicon': 0.5.2
