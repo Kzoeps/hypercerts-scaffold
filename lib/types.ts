@@ -4,6 +4,7 @@ import type * as HypercertEvidence from "@/lexicons/types/org/hypercerts/claim/e
 import type * as HypercertRights from "@/lexicons/types/org/hypercerts/claim/rights";
 import type * as HypercertLocation from "@/lexicons/types/app/certified/location";
 import { ComAtprotoRepoGetRecord } from "@atproto/api";
+import { CreateHypercertResult } from "@hypercerts-org/sdk-core";
 
 export type HypercertEvidenceData = Omit<
   ComAtprotoRepoGetRecord.OutputSchema,
@@ -38,6 +39,10 @@ export type HypercertContributionData = Omit<
 > & {
   value: HypercertContribution.Record;
 };
+
+export interface BaseHypercertFormProps {
+  hypercertInfo?: CreateHypercertResult;
+}
 
 export enum Collections {
   claim = "org.hypercerts.claim.activity",

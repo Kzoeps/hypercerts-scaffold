@@ -2,35 +2,46 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import * as HypercertClaim from "@/lexicons/types/org/hypercerts/claim/activity";
-import * as Evidence from "@/lexicons/types/org/hypercerts/claim/evidence";
-import { createEvidence, getHypercert, updateHypercert } from "@/lib/queries";
-import { useOAuthContext } from "@/providers/OAuthProviderSSR";
-import { ComAtprotoRepoCreateRecord } from "@atproto/api";
+import type { HypercertEvidence } from "@hypercerts-org/sdk-core";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import FormFooter from "./form-footer";
 import FormInfo from "./form-info";
 import LinkFileSelector from "./link-file-selector";
-import { buildStrongRef } from "@/lib/utils";
+import { Button } from "./ui/button";
+import { BaseHypercertFormProps } from "@/lib/types";
 
 type ContentMode = "link" | "file";
 
+const RELATION_TYPES: HypercertEvidence["relationType"][] = [
+  "supports",
+  "challenges",
+  "clarifies",
+];
+
 export default function HypercertEvidenceForm({
-  hypercertId,
+  hypercertInfo,
   onNext,
   onBack,
-}: {
-  hypercertId: string;
+}: BaseHypercertFormProps & {
   onNext?: () => void;
   onBack?: () => void;
 }) {
-  const { atProtoAgent } = useOAuthContext();
-
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
+  const [relationType, setRelationType] = useState<
+    HypercertEvidence["relationType"] | ""
+  >("supports");
+
   const [evidenceMode, setEvidenceMode] = useState<ContentMode>("link");
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
@@ -41,81 +52,96 @@ export default function HypercertEvidenceForm({
     setEvidenceFile(file ?? null);
   };
 
-  const getEvidenceContent = async () => {
-    if (evidenceMode === "link") {
-      if (!evidenceUrl.trim()) {
-        toast.error("Please provide a link to the evidence.");
-        setSaving(false);
-        return;
-      }
-      return { $type: "app.certified.defs#uri", value: evidenceUrl.trim() };
-    } else {
-      if (!evidenceFile) {
-        toast.error("Please upload an evidence file.");
-        setSaving(false);
-        return;
-      }
-      const blob = new Blob([evidenceFile], { type: evidenceFile.type });
-      const response = await atProtoAgent!.com.atproto.repo.uploadBlob(blob);
-      const uploadedBlob = response.data.blob;
-      return { $type: "smallBlob", ...uploadedBlob };
+  const validateTextFields = () => {
+    const titleTrimmed = title.trim();
+
+    if (!titleTrimmed) {
+      toast.error("Title is required.");
+      return false;
     }
+    if (titleTrimmed.length > 256) {
+      toast.error("Title must be at most 256 characters.");
+      return false;
+    }
+
+    if (!shortDescription.trim()) {
+      toast.error("Short description is required.");
+      return false;
+    }
+    if (shortDescription.length > 3000) {
+      toast.error("Short description must be at most 3000 characters.");
+      return false;
+    }
+
+    if (description.length > 30000) {
+      toast.error("Detailed description must be at most 30000 characters.");
+      return false;
+    }
+
+    if (relationType && !RELATION_TYPES.includes(relationType)) {
+      toast.error("Invalid relation type.");
+      return false;
+    }
+
+    return true;
   };
 
-  const buildUpdatedHyperCert = async (
-    evidenceData: ComAtprotoRepoCreateRecord.Response
-  ) => {
-    const evidenceCid = evidenceData?.data?.cid;
-    const evidenceURI = evidenceData?.data?.uri;
+  const handleAutofill = () => {
+    setTitle("Audit Report: Impact Verification");
+    setRelationType("supports");
+    setShortDescription(
+      "This audit report verifies the outputs and outcomes claimed by the hypercert, including methodology and third-party validation."
+    );
+    setDescription(
+      "This document provides an independent verification of the hypercert claim. It includes:\n\n- A breakdown of the methodology used\n- Supporting quantitative metrics\n- Third-party validation steps\n- References to supporting documentation and outcomes\n\nUse this evidence to substantiate the core claim and demonstrate credibility."
+    );
 
-    if (!evidenceCid || !evidenceURI) {
-      toast.error("Failed to create evidence record");
-      setSaving(false);
-      return;
-    }
+    // Evidence: enforce link mode (files not supported yet)
+    setEvidenceMode("link");
+    setEvidenceUrl("https://example.com/audit-report.pdf");
+    setEvidenceFile(null);
 
-    const hypercertData = await getHypercert(hypercertId, atProtoAgent!);
-    const updatedHypercert = {
-      ...hypercertData.data.value,
-      evidence: [buildStrongRef(evidenceCid, evidenceURI)],
-    };
-    return updatedHypercert;
+    toast.success("Autofilled evidence form with sample data.");
   };
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    if (!atProtoAgent) return;
     try {
       setSaving(true);
-      const content = await getEvidenceContent();
-      const evidenceRecord = {
-        $type: "org.hypercerts.claim.evidence",
-        content,
-        title: title || undefined,
-        shortDescription,
-        description: description || undefined,
-        createdAt: new Date().toISOString(),
-      } as Evidence.Record;
-      const validation = Evidence.validateRecord(evidenceRecord);
-      if (!validation.success) {
-        toast.error(validation.error?.message || "Invalid evidence record");
-        setSaving(false);
+      if (!validateTextFields() || !hypercertInfo?.hypercertUri) {
         return;
       }
 
-      const createResponse = await createEvidence(atProtoAgent, evidenceRecord);
-      const updatedHypercert = await buildUpdatedHyperCert(createResponse);
-      if (!updatedHypercert) return;
-      await updateHypercert(
-        hypercertId,
-        atProtoAgent,
-        updatedHypercert as HypercertClaim.Record
-      );
-      toast.success("Evidence created and linked to hypercert!");
+      const formData = new FormData();
+      formData.append("title", title.trim());
+      formData.append("shortDescription", shortDescription.trim());
+      formData.append("description", description.trim());
+      if (relationType) {
+        formData.append("relationType", relationType);
+      }
+      formData.append("hypercertUri", hypercertInfo?.hypercertUri);
+
+      if (evidenceMode === "link") {
+        if (!evidenceUrl.trim()) {
+          toast.error("Please provide a link to the evidence.");
+          return;
+        }
+        formData.append("evidenceUrl", evidenceUrl.trim());
+      } else {
+        if (!evidenceFile) {
+          toast.error("Please upload an evidence file.");
+          return;
+        }
+        formData.append("evidenceFile", evidenceFile);
+      }
+      await fetch("/api/certs/add-evidence", {
+        method: "POST",
+        body: formData,
+      });
       onNext?.();
-    } catch (error) {
-      console.error("Error saving evidence:", error);
-      toast.error("Failed to create evidence");
+    } catch (err) {
+      console.error("Error assembling FormData:", err);
+      toast.error("Failed to assemble FormData");
     } finally {
       setSaving(false);
     }
@@ -124,22 +150,56 @@ export default function HypercertEvidenceForm({
   return (
     <FormInfo
       title="Add Hypercert Evidence"
-      description="Attach a link of file that backs up this hypercert claim"
+      description="Attach a link or file that backs up this hypercert claim"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAutofill}
+          >
+            Autofill example
+          </Button>
+        </div>
         <div className="space-y-2">
-          <Label htmlFor="title">Title (Optional)</Label>
+          <Label htmlFor="title">Title *</Label>
           <Input
             id="title"
             placeholder="e.g., Audit report, Research paper, Demo video"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={256}
+            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="shortDescription">Short Description (Required)</Label>
+          <Label htmlFor="relationType">Relation Type *</Label>
+          <Select
+            value={relationType}
+            onValueChange={(val) =>
+              setRelationType(val as HypercertEvidence["relationType"])
+            }
+          >
+            <SelectTrigger id="relationType">
+              <SelectValue placeholder="Choose how this evidence relates..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="supports">Supports</SelectItem>
+              <SelectItem value="clarifies">Clarifies</SelectItem>
+              <SelectItem value="challenges">Challenges</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Specify whether this evidence supports, clarifies, or challenges the
+            claim.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="shortDescription">Short Description *</Label>
           <Textarea
             id="shortDescription"
             placeholder="Summarize what this evidence demonstrates..."
@@ -180,6 +240,7 @@ export default function HypercertEvidenceForm({
           urlHelpText="Paste a URL to a public resource (report, article, repo, video, etc.)."
           fileHelpText="Upload a supporting file (PDF, image, etc.). It will be stored as a blob."
         />
+
         <FormFooter
           onBack={onBack}
           onSkip={onNext}

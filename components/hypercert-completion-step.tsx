@@ -10,17 +10,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CheckCircle2, ArrowLeft, Plus } from "lucide-react";
+import { BaseHypercertFormProps } from "@/lib/types";
 
 export default function HypercertCompletionStep({
-  hypercertId,
+  hypercertInfo,
   onBack,
   onCreateAnother,
-}: {
-  hypercertId?: string;
+}: BaseHypercertFormProps & {
   onBack?: () => void;
   onCreateAnother?: () => void;
 }) {
-  const viewHref = hypercertId ? `/${hypercertId}` : "/hypercerts";
+  const viewHref = hypercertInfo?.hypercertUri
+    ? `/${encodeURIComponent(hypercertInfo.hypercertUri)}`
+    : "/hypercerts";
   return (
     <div className="p-6">
       <div className="max-w-3xl mx-auto">
@@ -43,10 +45,12 @@ export default function HypercertCompletionStep({
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {hypercertId ? (
+            {hypercertInfo?.hypercertCid ? (
               <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                <span className="font-mono text-xs">ID:</span>{" "}
-                <span className="font-mono break-all">{hypercertId}</span>
+                <span className="font-mono text-xs">CID:</span>{" "}
+                <span className="font-mono break-all">
+                  {hypercertInfo.hypercertCid}
+                </span>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -68,7 +72,7 @@ export default function HypercertCompletionStep({
                 </Button>
               )}
 
-              {hypercertId && (
+              {hypercertInfo?.hypercertCid && (
                 <Link href={viewHref}>
                   <Button className="gap-2">View hypercert</Button>
                 </Link>

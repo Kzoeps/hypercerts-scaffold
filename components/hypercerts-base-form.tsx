@@ -1,11 +1,14 @@
 "use client";
-
+import HypercertRightsFields, {
+  RightsState,
+} from "@/components/hypercerts-rights-fields";
 import { DatePicker } from "@/components/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import * as Hypercert from "@/lexicons/types/org/hypercerts/claim/activity";
+import { CreateHypercertParams } from "@hypercerts-org/sdk-core";
 import { Label } from "@radix-ui/react-label";
 import { PlusIcon, XIcon } from "lucide-react";
 import { FormEventHandler, useState } from "react";
@@ -13,9 +16,11 @@ import { FormEventHandler, useState } from "react";
 export interface HypercertsBaseFormProps {
   isSaving: boolean;
   saveDisabled: boolean;
-  onSave?: (record: HypercertRecordForm, advance?: boolean) => void;
+  onSave?: (record: CreateHypercertParams, advance?: boolean) => void;
   updateActions?: boolean;
   certInfo?: Hypercert.Record;
+  hypercertUri?: string;
+  nextStepper: () => void;
 }
 
 export interface HypercertRecordForm {
@@ -35,6 +40,8 @@ export default function HypercertsBaseForm({
   onSave,
   updateActions,
   certInfo,
+  hypercertUri,
+  nextStepper,
 }: HypercertsBaseFormProps) {
   const initialWorkScope = certInfo?.workScope
     .split(",")
@@ -48,12 +55,17 @@ export default function HypercertsBaseForm({
   const [workScope, setWorkScope] = useState<string[]>(
     initialWorkScope || [""]
   );
-  const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date | null>(
+  const [startDate, setStartDate] = useState<Date | null>(
     certInfo?.workTimeFrameFrom ? new Date(certInfo?.workTimeFrameFrom) : null
   );
-  const [workTimeframeTo, setWorkTimeframeTo] = useState<Date | null>(
+  const [endDate, setEndDate] = useState<Date | null>(
     certInfo?.workTimeFrameTo ? new Date(certInfo?.workTimeFrameTo) : null
   );
+  const [rights, setRights] = useState<RightsState>({
+    name: "",
+    type: "",
+    description: "",
+  });
 
   const handleWorkScopeChange = (index: number, value: string) => {
     setWorkScope((prev) => {
@@ -71,32 +83,36 @@ export default function HypercertsBaseForm({
     setWorkScope((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const getRecord = (): HypercertRecordForm | undefined => {
-    const cleanedWorkScope = workScope
-      .map((w) => w.trim())
-      .filter(Boolean)
-      .join(",");
+  const getRecord = (): CreateHypercertParams | undefined => {
+    // const cleanedWorkScope = workScope
+    //   .map((w) => w.trim())
+    //   .filter(Boolean)
+    //   .join(",");
 
     if (
-      !(
-        title &&
-        shortDescription &&
-        cleanedWorkScope &&
-        workTimeframeFrom &&
-        workTimeframeTo
-      )
+      !rights.name.trim() ||
+      !rights.type.trim() ||
+      !rights.description.trim()
     ) {
       return;
     }
 
-    const record: HypercertRecordForm = {
+    if (!(title && shortDescription && startDate && endDate)) {
+      return;
+    }
+
+    const record: CreateHypercertParams = {
       title,
       shortDescription,
-      workScope: cleanedWorkScope,
+      rights: {
+        name: rights.name.trim(),
+        type: rights.type.trim(),
+        description: rights.description.trim(),
+      },
+      description: shortDescription,
       image: backgroundImage,
-      workTimeFrameFrom: workTimeframeFrom.toISOString(),
-      workTimeFrameTo: workTimeframeTo.toISOString(),
-      createdAt: new Date().toISOString(),
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     };
     return record;
   };
@@ -109,15 +125,50 @@ export default function HypercertsBaseForm({
     onSave?.(record, false);
   };
 
-  const handleSaveAndContinue = () => {
-    setButtonClicked("saveNext");
-    const record = getRecord();
-    if (!record) return;
-    onSave?.(record, true);
+  const next = () => {
+    // setButtonClicked("saveNext");
+    // const record = getRecord();
+    // if (!record) return;
+    // onSave?.(record, true);
+    nextStepper();
+  };
+
+  const handleAutofill = () => {
+    setRights({
+      name: "Creative Commons Attribution 4.0",
+      type: "cc-by-4.0",
+      description:
+        "This hypercert is licensed under CC BY 4.0. Attribution required.",
+    });
+    setTitle(
+      `Clean Energy Community Initiative ${(Math.random() * 100).toFixed(0)}`
+    );
+    setShortDescription(
+      "A community-driven initiative to distribute clean energy resources and fund renewable projects across rural regions."
+    );
+    setWorkScope(["clean-energy", "community", "renewables"]);
+
+    const from = new Date();
+    from.setMonth(from.getMonth() - 6);
+    const to = new Date();
+    to.setMonth(to.getMonth() + 6);
+    setStartDate(from);
+    setEndDate(to);
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <div className="flex">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleAutofill}
+          aria-label="Autofill with dummy values"
+        >
+          Autofill
+        </Button>
+      </div>
+
       <div className="flex flex-col gap-1">
         <Label htmlFor="title">Hypercert Name *</Label>
         <Input
@@ -139,17 +190,22 @@ export default function HypercertsBaseForm({
           required
         />
       </div>
+      <div className="rounded-lg border p-4 space-y-4">
+        <h3 className="text-lg font-semibold">Rights</h3>
+        <p className="text-sm text-muted-foreground">
+          Rights information is required to create a Hypercert.
+        </p>
+
+        <HypercertRightsFields value={rights} onChange={setRights} />
+      </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="background-image" aria-required>
-          Background Image *
-        </Label>
+        <Label htmlFor="background-image">Background Image</Label>
         <Input
           id="background-image"
           onChange={(e) => setBackgroundImage(e.target.files?.[0])}
           type="file"
           placeholder="Add Background Image"
-          required
         />
       </div>
 
@@ -194,15 +250,15 @@ export default function HypercertsBaseForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <DatePicker
-            initDate={workTimeframeFrom || undefined}
-            onChange={setWorkTimeframeFrom}
+            initDate={startDate || undefined}
+            onChange={setStartDate}
             label="Work Time Frame From"
           />
         </div>
         <div>
           <DatePicker
-            initDate={workTimeframeTo || undefined}
-            onChange={setWorkTimeframeTo}
+            initDate={endDate || undefined}
+            onChange={setEndDate}
             label="Work Time Frame To"
           />
         </div>
@@ -222,14 +278,12 @@ export default function HypercertsBaseForm({
 
           <Button
             type="button"
-            disabled={isSaving}
-            onClick={handleSaveAndContinue}
+            disabled={!hypercertUri || isSaving}
+            onClick={next}
             aria-label="Save and go to Contributions"
           >
             {isSaving && <Spinner className="mr-2" />}
-            {isSaving && buttonClicked === "saveNext"
-              ? "Creating…"
-              : "Create & Next"}
+            {isSaving && buttonClicked === "saveNext" ? "Creating…" : "Next"}
           </Button>
         </div>
       )}

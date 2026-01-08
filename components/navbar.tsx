@@ -2,7 +2,6 @@
 
 import { AtSignIcon } from "lucide-react";
 import { useState, FormEventHandler } from "react";
-import { useOAuthContext } from "@/providers/OAuthProviderSSR";
 import { useUserHandle } from "@/queries/use-user-handle";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,29 +14,44 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { PDS_URL } from "@/utils/constants";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-export default function Navbar() {
-  const { isSignedIn, signIn, signOut, isLoading } = useOAuthContext();
+export default function Navbar({ isSignedIn }: { isSignedIn: boolean }) {
   const userHandle = useUserHandle();
   const [handle, setHandle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    await signIn(handle);
-    setOpen(false);
-    setHandle("");
+    setLoading(true);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ handle }),
+      });
+      const data = await response.json();
+      router.push(data.authUrl);
+      setOpen(false);
+      setHandle("");
+    } catch (e) {
+      console.error(e);
+      toast.error("Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const redirectToAccountCreation = () => {
-    signIn(PDS_URL);
     setOpen(false);
   };
 
   const handleLogout = async () => {
-    await signOut();
+    // TODO implement revoke session
+    // await signOut();
   };
 
   return (
@@ -62,19 +76,14 @@ export default function Navbar() {
                 @{userHandle}
               </span>
             )}
-            <Button
-              onClick={handleLogout}
-              disabled={isLoading}
-              variant="outline"
-              size="sm"
-            >
+            <Button onClick={handleLogout} variant="outline" size="sm">
               Logout
             </Button>
           </div>
         ) : (
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-              <Button variant="default" size="sm" disabled={isLoading}>
+              <Button disabled={loading} variant="default" size="sm">
                 Login
               </Button>
             </PopoverTrigger>

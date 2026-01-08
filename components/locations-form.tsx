@@ -4,11 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import * as Location from "@/lexicons/types/app/certified/location";
-import * as HypercertClaim from "@/lexicons/types/org/hypercerts/claim/activity";
-import { createLocation, getHypercert, updateHypercert } from "@/lib/queries";
-import { buildStrongRef, validateHypercert } from "@/lib/utils";
-import { useOAuthContext } from "@/providers/OAuthProviderSSR";
+import { BaseHypercertFormProps } from "@/lib/types";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import FormFooter from "./form-footer";
@@ -18,16 +14,13 @@ import LinkFileSelector from "./link-file-selector";
 type LocationContentMode = "link" | "file";
 
 export default function HypercertLocationForm({
-  hypercertId,
+  hypercertInfo,
   onBack,
   onNext,
-}: {
-  hypercertId: string;
+}: BaseHypercertFormProps & {
   onBack?: () => void;
   onNext?: () => void;
 }) {
-  const { atProtoAgent } = useOAuthContext();
-
   const [lpVersion, setLpVersion] = useState("1.0.0");
   const [srs, setSrs] = useState(
     "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
@@ -56,96 +49,61 @@ export default function HypercertLocationForm({
     setLocationFile(file ?? null);
   };
 
-  const getLocationContent = async () => {
-    if (contentMode === "link") {
-      if (!locationUrl.trim()) {
-        toast.error("Please provide a link to the evidence.");
-        setSaving(false);
-        return;
-      }
-      return { $type: "app.certified.defs#uri", value: locationUrl.trim() };
-    } else {
-      if (!locationFile) {
-        toast.error("Please upload an evidence file.");
-        setSaving(false);
-        return;
-      }
-      const blob = new Blob([locationFile], { type: locationFile.type });
-      const response = await atProtoAgent!.com.atproto.repo.uploadBlob(blob);
-      const uploadedBlob = response.data.blob;
-      return { $type: "smallBlob", ...uploadedBlob };
-    }
-  };
-
-  const handleLocationCreation = async () => {
-    const location = await getLocationContent();
-    if (!location) return;
-    const locationRecord: Location.Record = {
-      $type: "app.certified.location",
-      lpVersion,
-      srs,
-      locationType: effectiveLocationType,
-      location,
-      name: name || undefined,
-      description: description || undefined,
-      createdAt: new Date().toISOString(),
-    };
-
-    const validation = Location.validateRecord(locationRecord);
-    if (!validation.success) {
-      toast.error(validation.error?.message || "Invalid location record");
-      setSaving(false);
-      return;
-    }
-    const locationInfo = await createLocation(atProtoAgent!, locationRecord);
-    const locationCid = locationInfo?.data?.cid;
-    const locationURI = locationInfo?.data?.uri;
-
-    return { locationCid, locationURI };
-  };
-
-  const handleUpdateHypercert = async (
-    locationCID: string,
-    locationURI: string
-  ) => {
-    if (!atProtoAgent) return;
-    const hypercert = await getHypercert(hypercertId, atProtoAgent);
-    const hypercertRecord = (hypercert.data.value ||
-      {}) as HypercertClaim.Record;
-    const updatedHypercert = {
-      ...hypercertRecord,
-      location: buildStrongRef(locationCID, locationURI),
-    };
-
-    const hypercertValidation = validateHypercert(updatedHypercert);
-    if (!hypercertValidation.success) {
-      toast.error(
-        hypercertValidation.error || "Invalid updated hypercert record"
-      );
-      setSaving(false);
-      return;
-    }
-    await updateHypercert(hypercertId, atProtoAgent, updatedHypercert);
-  };
-
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    if (!atProtoAgent) return;
+    if (!hypercertInfo?.hypercertUri) {
+      return;
+    }
     try {
       setSaving(true);
-      const { locationCid, locationURI } =
-        (await handleLocationCreation()) || {};
-      if (!locationCid || !locationURI) {
-        toast.error("Failed to create location record");
-        setSaving(false);
+      if (!lpVersion.trim()) {
+        toast.error("Location Protocol Version is required.");
         return;
       }
-      await handleUpdateHypercert(locationCid, locationURI);
-      toast.success("Location created and linked to hypercert!");
-      onNext?.();
+      if (!srs.trim()) {
+        toast.error("Spatial Reference System (SRS) is required.");
+        return;
+      }
+      if (!effectiveLocationType.trim()) {
+        toast.error("Location Type is required.");
+        return;
+      }
+      if (contentMode === "link" && !locationUrl.trim()) {
+        toast.error("Please provide a link to the location data.");
+        return;
+      }
+      if (contentMode === "file" && !locationFile) {
+        toast.error("Please upload a location file.");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("lpVersion", lpVersion.trim());
+      formData.append("srs", srs.trim());
+      formData.append("locationType", effectiveLocationType.trim());
+      formData.append("createdAt", new Date().toISOString());
+
+      if (name.trim()) formData.append("name", name.trim());
+      if (description.trim())
+        formData.append("description", description.trim());
+      formData.append("contentMode", contentMode);
+
+      if (contentMode === "link") {
+        formData.append("locationUrl", locationUrl.trim());
+      } else {
+        formData.append("locationFile", locationFile as File);
+      }
+      formData.append("hypercertUri", hypercertInfo?.hypercertUri);
+      const response = await fetch("/api/certs/add-location", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      console.log(result);
+      toast.success("Location Added Successfully");
+      onNext?.(); // Optional: leave commented until backend exists
     } catch (error) {
-      console.error("Error saving location:", error);
-      toast.error("Failed to create location");
+      console.error("Error assembling FormData:", error);
+      toast.error("Failed to assemble FormData");
     } finally {
       setSaving(false);
     }

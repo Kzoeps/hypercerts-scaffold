@@ -1,20 +1,23 @@
-"use client";
-import Loader from "@/components/loader";
 import LoginDialog from "@/components/login-dialog";
 import Navbar from "@/components/navbar";
-import { useOAuthContext } from "./OAuthProviderSSR";
+import { getSession } from "@/lib/atproto-session";
 
-export function SignedInProvider({ children }: { children?: React.ReactNode }) {
-  const { isSignedIn, isLoading } = useOAuthContext();
+export async function SignedInProvider({
+  children,
+}: {
+  children?: React.ReactNode;
+}) {
+  const session = await getSession();
 
   return (
     <>
-      <Navbar />
-      {isSignedIn ? (
+      <Navbar isSignedIn={!!session} />
+      {session ? (
         <>{children}</>
       ) : (
         <div className="flex grow flex-col items-center justify-center">
-          {!isLoading ? <LoginDialog /> : <Loader />}
+          <LoginDialog />
+          {/* {!isLoading ? <LoginDialog /> : <Loader />} */}
         </div>
       )}
     </>
