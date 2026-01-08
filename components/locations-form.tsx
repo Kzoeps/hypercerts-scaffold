@@ -169,13 +169,13 @@ export default function HypercertLocationForm({
         formData.append("locationFile", locationFile as File);
       }
       formData.append("hypercertUri", hypercertUri);
-      await fetch("/api/certs/add-location", {
+      const response = await fetch("/api/certs/add-location", {
         method: "POST",
         body: formData,
       });
-
-      toast.success("FormData prepared successfully (no API call yet).");
-      // onNext?.(); // Optional: leave commented until backend exists
+      const result = await response.json();
+      toast.success("Location Added Successfully");
+      onNext?.(); // Optional: leave commented until backend exists
     } catch (error) {
       console.error("Error assembling FormData:", error);
       toast.error("Failed to assemble FormData");
