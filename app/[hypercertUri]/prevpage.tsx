@@ -31,8 +31,7 @@ export default function HypercertDetailsPage() {
     }
   }, [atProtoAgent, session, hypercertId, router]);
 
-  useEffect(() => {
-    let cancelled = false;
+  useEffect(() => { let cancelled = false;
     async function fetchHypercert() {
       if (!atProtoAgent || !hypercertId) return;
       setLoading(true);

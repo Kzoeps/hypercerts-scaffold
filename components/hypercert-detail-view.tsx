@@ -1,17 +1,18 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { HypercertRecordData } from "@/lib/types";
-import { getPDSlsURI } from "@/lib/utils";
 import { URILink } from "./uri-link";
+import { getPDSlsURI } from "@/lib/utils";
+
+import type { HypercertClaim } from "@hypercerts-org/sdk-core";
 
 export default function HypercertDetailsView({
-  hypercertData,
+  hypercertUri,
+  record,
 }: {
-  hypercertData: HypercertRecordData;
+  hypercertUri: string;
+  record: HypercertClaim;
 }) {
-  const record = hypercertData.value;
   return (
     <div className="space-y-4">
       <div>
@@ -20,6 +21,7 @@ export default function HypercertDetailsView({
             {record.title || "Untitled"}
           </h2>
         </div>
+
         {record.shortDescription ? (
           <p className="text-sm text-muted-foreground mt-1">
             {record.shortDescription}
@@ -30,14 +32,17 @@ export default function HypercertDetailsView({
       <Separator />
 
       <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
+        {/* hide scope for now depending on how we should display it */}
+        {/* <div className="space-y-1">
           <dt className="text-xs text-muted-foreground">Work Scope</dt>
-          <dd className="text-sm flex gap-2">
-            {record.workScope.split(",").map((scope) => {
-              return <Badge key={scope}>{scope}</Badge>;
-            })}
+          <dd className="text-sm flex gap-2 flex-wrap">
+            {workScope.length ? (
+              workScope.map((scope) => <Badge key={scope}>{scope}</Badge>)
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
           </dd>
-        </div>
+        </div> */}
 
         <div className="space-y-1">
           <dt className="text-xs text-muted-foreground">Created At</dt>
@@ -53,8 +58,8 @@ export default function HypercertDetailsView({
             Work Timeframe (From)
           </dt>
           <dd className="text-sm">
-            {record.workTimeFrameFrom
-              ? new Date(record.workTimeFrameFrom).toLocaleDateString()
+            {record.startDate
+              ? new Date(record.startDate).toLocaleDateString()
               : "—"}
           </dd>
         </div>
@@ -62,8 +67,8 @@ export default function HypercertDetailsView({
         <div className="space-y-1">
           <dt className="text-xs text-muted-foreground">Work Timeframe (To)</dt>
           <dd className="text-sm">
-            {record.workTimeFrameTo
-              ? new Date(record.workTimeFrameTo).toLocaleDateString()
+            {record.endDate
+              ? new Date(record.endDate).toLocaleDateString()
               : "—"}
           </dd>
         </div>
@@ -71,17 +76,18 @@ export default function HypercertDetailsView({
         <div className="space-y-1 md:col-span-2">
           <dt className="text-xs text-muted-foreground">URI</dt>
           <dd className="text-sm break-all">
-            <URILink
-              uri={getPDSlsURI(hypercertData.uri)}
-              label={hypercertData.uri}
-            />
+            <URILink uri={getPDSlsURI(hypercertUri)} label={hypercertUri} />
           </dd>
         </div>
 
-        <div className="space-y-1 md:col-span-2">
-          <dt className="text-xs text-muted-foreground">CID</dt>
-          <dd className="text-sm break-all">{hypercertData.cid || "—"}</dd>
-        </div>
+        {record.description ? (
+          <div className="space-y-1 md:col-span-2">
+            <dt className="text-xs text-muted-foreground">Description</dt>
+            <dd className="text-sm whitespace-pre-wrap">
+              {record.description}
+            </dd>
+          </div>
+        ) : null}
       </dl>
     </div>
   );

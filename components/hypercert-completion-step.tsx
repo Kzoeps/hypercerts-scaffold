@@ -20,8 +20,8 @@ export default function HypercertCompletionStep({
   onBack?: () => void;
   onCreateAnother?: () => void;
 }) {
-  const viewHref = hypercertInfo?.hypercertCid
-    ? `/${hypercertInfo.hypercertCid}`
+  const viewHref = hypercertInfo?.hypercertUri
+    ? `/${encodeURIComponent(hypercertInfo.hypercertUri)}`
     : "/hypercerts";
   return (
     <div className="p-6">
