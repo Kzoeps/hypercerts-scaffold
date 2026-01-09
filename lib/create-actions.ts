@@ -35,3 +35,16 @@ export const addContribution = async (params: {
   }
   throw new Error("Unable to get authenticated repository");
 };
+
+export const createOrganization = async (params: {
+  handlePrefix: string;
+  description: string;
+  name: string;
+}) => {
+  const sdsRepository = await getAuthenticatedRepo("sds");
+  if (!sdsRepository) {
+    throw new Error("Unable to get authenticated repository");
+  }
+  const org = await sdsRepository.organizations.create(params);
+  return org;
+};

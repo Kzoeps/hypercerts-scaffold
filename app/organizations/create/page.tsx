@@ -1,28 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import OrganizationForm, {
   OrganizationFormParams,
 } from "@/components/organization-form";
 import FormInfo from "@/components/form-info";
+import { createOrganization } from "@/lib/create-actions";
 
 export default function CreateOrganizationPage() {
-  const [isCreating, setIsCreating] = useState(false);
-
-  const handleSubmit = async (params: OrganizationFormParams) => {
-    setIsCreating(true);
-    try {
-      // TODO: replace with actual API call
-      console.log(params);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  const mutation = useMutation({
+    mutationFn: (params: OrganizationFormParams) => createOrganization(params),
+    onSuccess: () => {
       toast.success("Organization created successfully!");
-    } catch (e) {
-      console.error(e);
+    },
+    onError: (error) => {
+      console.error(error);
       toast.error("Failed to create organization");
-    } finally {
-      setIsCreating(false);
-    }
+    },
+  });
+
+  const handleSubmit = (params: OrganizationFormParams) => {
+    mutation.mutate(params);
   };
 
   return (
@@ -31,7 +30,10 @@ export default function CreateOrganizationPage() {
         title="Create Organization"
         description="Fill out the form to create a new organization."
       >
-        <OrganizationForm isCreating={isCreating} onSubmit={handleSubmit} />
+        <OrganizationForm
+          isCreating={mutation.isPending}
+          onSubmit={handleSubmit}
+        />
       </FormInfo>
     </div>
   );

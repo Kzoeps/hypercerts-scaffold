@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { CheckIcon, XIcon } from "lucide-react";
 
 export interface OrganizationFormParams {
   name: string;
-  handle: string;
+  handlePrefix: string;
   description: string;
 }
 
@@ -26,9 +26,9 @@ export default function OrganizationForm({
   onSubmit,
 }: OrganizationFormProps) {
   const [name, setName] = useState("");
-  const [handle, setHandle] = useState("");
+  const [handlePrefix, setHandlePrefix] = useState("");
   const [description, setDescription] = useState("");
-  const debouncedHandle = useDebounce(handle, 500);
+  const debouncedHandle = useDebounce(handlePrefix, 500);
 
   const sdsUrl = process.env.NEXT_PUBLIC_SDS_URL?.replace(/^https?:\/\//, "");
 
@@ -68,7 +68,7 @@ export default function OrganizationForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (handleAvailable) {
-      onSubmit({ name, handle, description });
+      onSubmit({ name, handlePrefix, description });
     }
   };
 
@@ -90,8 +90,8 @@ export default function OrganizationForm({
         <div className="relative">
           <Input
             id="handle"
-            onChange={(e) => setHandle(e.target.value)}
-            value={handle}
+            onChange={(e) => setHandlePrefix(e.target.value)}
+            value={handlePrefix}
             placeholder="Enter the organization handle"
             required
             disabled={isCheckingHandle}
@@ -110,11 +110,11 @@ export default function OrganizationForm({
         {handleAvailable === false && (
           <p className="text-red-500 text-sm mt-1">Handle not available</p>
         )}
-        {handle && handleAvailable && (
+        {handlePrefix && handleAvailable && (
           <p className="text-sm mt-1">
             <span className="text-gray-600">Your full handle will be : </span>
             <span className="text-gray-500">
-              {handle}.{sdsUrl}
+              {handlePrefix}.{sdsUrl}
             </span>
           </p>
         )}
