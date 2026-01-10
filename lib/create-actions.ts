@@ -1,6 +1,9 @@
 "use server";
 
-import { CreateHypercertParams } from "@hypercerts-org/sdk-core";
+import {
+  CreateHypercertParams,
+  RepositoryRole,
+} from "@hypercerts-org/sdk-core";
 import { getAuthenticatedRepo, getSession } from "./atproto-session";
 import sdk from "./hypercerts-sdk";
 
@@ -47,4 +50,16 @@ export const createOrganization = async (params: {
   }
   const org = await sdsRepository.organizations.create(params);
   return org;
+};
+
+export const addCollaboratorToOrganization = async (params: {
+  userDid: string;
+  role: RepositoryRole;
+}) => {
+  const sdsRepository = await getAuthenticatedRepo("sds");
+  if (!sdsRepository) {
+    throw new Error("Unable to get authenticated repository");
+  }
+  const result = await sdsRepository.collaborators.grant(params);
+  return result;
 };

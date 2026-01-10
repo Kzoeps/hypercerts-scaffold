@@ -10,6 +10,7 @@ import FormInfo from "@/components/form-info";
 import { createOrganization } from "@/lib/create-actions";
 import OrganizationCreationSuccess from "@/components/organization-creation-success";
 import { OrganizationInfo } from "@hypercerts-org/sdk-core";
+import AddContributorsForm from "@/components/add-contributors-form";
 
 export default function CreateOrganizationPage() {
   const [createdOrg, setCreatedOrg] = useState<OrganizationInfo | null>(null);
@@ -35,10 +36,17 @@ export default function CreateOrganizationPage() {
   };
 
   if (showNextComponent) {
+    if (!createdOrg) {
+        return (
+            <div className="max-w-7xl mx-auto py-8 px-4 text-center">
+                <h2 className="text-2xl font-bold">Error</h2>
+                <p>Organization data is not available.</p>
+            </div>
+        )
+    }
     return (
-      <div className="max-w-7xl mx-auto py-8 px-4 text-center">
-        <h2 className="text-2xl font-bold">Next Component</h2>
-        <p>This is the component displayed after clicking next.</p>
+      <div className="max-w-7xl mx-auto py-8 px-4">
+        <AddContributorsForm orgInfo={createdOrg} />
       </div>
     );
   }
