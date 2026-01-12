@@ -26,7 +26,6 @@ export default async function OrganizationsList() {
   }
 
   const { organizations } = await sdsRepo.organizations.list({ limit: 50 });
-  console.log(organizations)
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4">

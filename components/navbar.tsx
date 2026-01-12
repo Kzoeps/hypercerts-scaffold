@@ -11,11 +11,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { AtSignIcon, LogOut, User } from "lucide-react";
+import { AtSignIcon, LogOut, User, GlobeIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
+import ProfileSwitchDialog from "./profile-switch-dialog";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -31,12 +32,20 @@ export interface NavbarProps {
   isSignedIn: boolean;
   avatarUrl?: string;
   handle?: string;
+  userDid?: string;
+  activeDid?: string;
+  activeProfileName?: string;
+  activeProfileHandle?: string;
 }
 
 export default function Navbar({
   isSignedIn,
   avatarUrl,
   handle: userHandle,
+  userDid,
+  activeDid,
+  activeProfileName,
+  activeProfileHandle,
 }: NavbarProps) {
   const [handle, setHandle] = useState("");
   const [loading, setLoading] = useState(false);
@@ -109,7 +118,7 @@ export default function Navbar({
                 </button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="flex flex-col gap-1">
                   <span className="text-sm font-medium">My Account</span>
                   {userHandle && (
@@ -118,6 +127,22 @@ export default function Navbar({
                     </span>
                   )}
                 </DropdownMenuLabel>
+                {activeProfileName && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="flex flex-col gap-1">
+                      <span className="text-sm font-medium">Active Profile</span>
+                      <span className="text-xs text-muted-foreground">
+                        {activeProfileName}
+                      </span>
+                      {activeProfileHandle && (
+                        <span className="text-xs text-muted-foreground">
+                          @{activeProfileHandle}
+                        </span>
+                      )}
+                    </DropdownMenuLabel>
+                  </>
+                )}
 
                 <DropdownMenuSeparator />
 
@@ -130,12 +155,23 @@ export default function Navbar({
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem>
-                  <button className="flex gap-2 w-full text-left">
-                    <span className="mr-2 h-4 w-4"></span> {/* Placeholder for icon */}
-                    Switch Profile Mode
-                  </button>
-                </DropdownMenuItem>
+                {/* Profile Switch Dialog Trigger */}
+                {userDid && userHandle && (
+                  <ProfileSwitchDialog
+                    personalHandle={userHandle}
+                    currentActiveDid={activeDid || userDid}
+                    userDid={userDid}
+                  >
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      {" "}
+                      {/* Prevent dropdown close on trigger click */}
+                      <button className="flex gap-2 w-full text-left">
+                        <GlobeIcon className="mr-2 h-4 w-4" />
+                        Switch Profile
+                      </button>
+                    </DropdownMenuItem>
+                  </ProfileSwitchDialog>
+                )}
 
                 <DropdownMenuSeparator />
 

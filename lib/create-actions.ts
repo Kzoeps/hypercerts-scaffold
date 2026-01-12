@@ -7,12 +7,22 @@ import {
 import { getAuthenticatedRepo, getSession } from "./atproto-session";
 import sdk from "./hypercerts-sdk";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 export interface GrantAccessParams {
   repoDid: string;
   userDid: string;
   role: RepositoryRole;
 }
+export const switchActiveProfile = async (did: string) => {
+  const cookieStore = await cookies();
+  cookieStore.set("active-did", did, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+};
 
 export const createHypercertUsingSDK = async (
   params: CreateHypercertParams
