@@ -119,18 +119,6 @@ export default function OrganizationDetailsView({
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Raw data</CardTitle>
-          <CardDescription>Helpful while building the page.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <pre className="text-xs overflow-auto rounded-md border bg-muted p-4">
-            {JSON.stringify(organization, null, 2)}
-          </pre>
-        </CardContent>
-      </Card>
     </div>
   );
 }

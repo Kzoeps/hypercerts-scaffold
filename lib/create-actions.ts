@@ -83,3 +83,12 @@ export const removeCollaborator = async (params: {
   revalidatePath(`/organizations/[orgDid]`, "page");
   return result;
 };
+
+export const listOrgs = async () => {
+  const sdsRepository = await getAuthenticatedRepo("sds");
+  if (!sdsRepository) {
+    throw new Error("Unable to get authenticated repository");
+  }
+  const orgs = await sdsRepository.organizations.list({ limit: 100 });
+  return orgs;
+};

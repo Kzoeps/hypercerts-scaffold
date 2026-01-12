@@ -130,6 +130,15 @@ export default function Navbar({
 
                 <DropdownMenuSeparator />
 
+                <DropdownMenuItem>
+                  <button className="flex gap-2 w-full text-left">
+                    <span className="mr-2 h-4 w-4"></span> {/* Placeholder for icon */}
+                    Switch Profile Mode
+                  </button>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
                 <DropdownMenuItem
                   disabled={loading}
                   onClick={handleLogout}
