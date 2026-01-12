@@ -11,7 +11,10 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import FormInfo from "./form-info";
 import UserAvatar from "./user-avatar";
-import { addCollaboratorToOrganization } from "@/lib/create-actions";
+import {
+  addCollaboratorToOrganization,
+  GrantAccessParams,
+} from "@/lib/create-actions";
 
 interface AddContributorsFormProps {
   orgInfo: OrganizationInfo;
@@ -24,7 +27,7 @@ export default function AddContributorsForm({
   const [selectedRole, setSelectedRole] = useState<RepositoryRole>("editor");
 
   const mutation = useMutation({
-    mutationFn: (params: { userDid: string; role: RepositoryRole }) =>
+    mutationFn: (params: GrantAccessParams) =>
       addCollaboratorToOrganization(params),
     onSuccess: () => {
       toast.success("Contributor added successfully!");
@@ -48,6 +51,7 @@ export default function AddContributorsForm({
     mutation.mutate({
       userDid: selectedUser.did,
       role: selectedRole,
+      repoDid: orgInfo.did,
     });
   };
 

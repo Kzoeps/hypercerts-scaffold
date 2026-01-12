@@ -1,3 +1,4 @@
+import "server-only";
 import { createClient } from "redis";
 if (!process.env.REDIS_PASSWORD) {
   throw new Error("REDIS_PASSWORD is not defined in environment variables");

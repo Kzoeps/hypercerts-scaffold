@@ -7,6 +7,12 @@ import {
 import { getAuthenticatedRepo, getSession } from "./atproto-session";
 import sdk from "./hypercerts-sdk";
 
+export interface GrantAccessParams {
+  repoDid: string;
+  userDid: string;
+  role: RepositoryRole;
+}
+
 export const createHypercertUsingSDK = async (
   params: CreateHypercertParams
 ) => {
@@ -52,10 +58,9 @@ export const createOrganization = async (params: {
   return org;
 };
 
-export const addCollaboratorToOrganization = async (params: {
-  userDid: string;
-  role: RepositoryRole;
-}) => {
+export const addCollaboratorToOrganization = async (
+  params: GrantAccessParams
+) => {
   const sdsRepository = await getAuthenticatedRepo("sds");
   if (!sdsRepository) {
     throw new Error("Unable to get authenticated repository");

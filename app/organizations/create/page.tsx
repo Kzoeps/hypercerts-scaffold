@@ -37,12 +37,12 @@ export default function CreateOrganizationPage() {
 
   if (showNextComponent) {
     if (!createdOrg) {
-        return (
-            <div className="max-w-7xl mx-auto py-8 px-4 text-center">
-                <h2 className="text-2xl font-bold">Error</h2>
-                <p>Organization data is not available.</p>
-            </div>
-        )
+      return (
+        <div className="max-w-7xl mx-auto py-8 px-4 text-center">
+          <h2 className="text-2xl font-bold">Error</h2>
+          <p>Organization data is not available.</p>
+        </div>
+      );
     }
     return (
       <div className="max-w-7xl mx-auto py-8 px-4">
