@@ -120,7 +120,6 @@ export default function OrganizationDetailsView({
         </CardContent>
       </Card>
 
-      {/* Optional debug panel */}
       <Card>
         <CardHeader>
           <CardTitle>Raw data</CardTitle>

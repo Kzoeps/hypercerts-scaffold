@@ -1,5 +1,13 @@
+import AddContributorsForm from "@/components/add-contributors-form";
 import CollaboratorsList from "@/components/collaborators-list-view";
 import OrganizationDetailsView from "@/components/organization-detail-view";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { getAuthenticatedRepo } from "@/lib/atproto-session";
 import type { RepositoryAccessGrant } from "@hypercerts-org/sdk-core";
 
@@ -75,6 +83,17 @@ export default async function OrganizationPage({
         repoDid={decodedOrgDid}
         collaborators={collaborators}
       />
+      <AddContributorsForm orgInfo={org} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Raw data</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <pre className="text-xs overflow-auto rounded-md border bg-muted p-4">
+            {JSON.stringify(org, null, 2)}
+          </pre>
+        </CardContent>
+      </Card>
     </div>
   );
 }

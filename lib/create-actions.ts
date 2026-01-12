@@ -6,6 +6,7 @@ import {
 } from "@hypercerts-org/sdk-core";
 import { getAuthenticatedRepo, getSession } from "./atproto-session";
 import sdk from "./hypercerts-sdk";
+import { revalidatePath } from "next/cache";
 
 export interface GrantAccessParams {
   repoDid: string;
@@ -66,6 +67,7 @@ export const addCollaboratorToOrganization = async (
     throw new Error("Unable to get authenticated repository");
   }
   const result = await sdsRepository.collaborators.grant(params);
+  revalidatePath(`/organizations/${encodeURIComponent(params.repoDid)}`);
   return result;
 };
 
@@ -78,5 +80,6 @@ export const removeCollaborator = async (params: {
     throw new Error("Unable to get authenticated repository");
   }
   const result = await sdsRepository.collaborators.revoke(params);
+  revalidatePath(`/organizations/[orgDid]`, "page");
   return result;
 };
