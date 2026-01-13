@@ -1,4 +1,4 @@
-import { getAuthenticatedRepo } from "@/lib/atproto-session";
+import { getRepoContext } from "@/lib/repo-context";
 import {
   HYPERCERT_COLLECTIONS,
   HypercertEvidence,
@@ -24,11 +24,17 @@ export async function POST(req: NextRequest) {
     const evidenceMode =
       (data.get("evidenceMode") as string | null)?.trim() ?? "link";
 
-    // If you're not providing a CID yet, you can leave subject undefined.
     const hypercertUri =
       (data.get("hypercertUri") as string | null)?.trim() ?? undefined;
     const hypercertCid =
       (data.get("hypercertCid") as string | null)?.trim() ?? undefined;
+
+    if (!hypercertUri) {
+      return NextResponse.json(
+        { error: "Missing hypercertUri." },
+        { status: 400 }
+      );
+    }
 
     const subject =
       hypercertUri && hypercertCid
@@ -65,6 +71,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // TODO: replace this with your upload flow
       content = {
         $type: "org.hypercerts.defs#uri",
         uri: "https://youchoseafilebutheresauri.com",
@@ -79,6 +86,7 @@ export async function POST(req: NextRequest) {
     if (!title) {
       return NextResponse.json({ error: "Missing title." }, { status: 400 });
     }
+
     const evidenceRecord: HypercertEvidence = {
       $type: HYPERCERT_COLLECTIONS.EVIDENCE,
       subject,
@@ -90,14 +98,19 @@ export async function POST(req: NextRequest) {
       createdAt,
     };
 
-    const personalRepository = await getAuthenticatedRepo();
-    if (personalRepository) {
-      const response = await personalRepository.hypercerts.addEvidence(
-        hypercertUri || "",
-        [evidenceRecord]
+    const ctx = await getRepoContext(); // defaults targetDid=activeDid
+    if (!ctx) {
+      return NextResponse.json(
+        { error: "Could not authenticate repo" },
+        { status: 401 }
       );
-      return NextResponse.json(response);
     }
+
+    const response = await ctx.scopedRepo.hypercerts.addEvidence(hypercertUri, [
+      evidenceRecord,
+    ]);
+
+    return NextResponse.json(response);
   } catch (e) {
     console.error("Error in add-evidence API:", e);
     return NextResponse.json(

@@ -1,4 +1,5 @@
 "use server";
+import { getRepoContext } from "@/lib/repo-context";
 
 import {
   CreateHypercertParams,
@@ -24,16 +25,6 @@ export const switchActiveProfile = async (did: string) => {
   });
 };
 
-export const createHypercertUsingSDK = async (
-  params: CreateHypercertParams
-) => {
-  const personalRepository = await getAuthenticatedRepo("pds");
-  if (personalRepository) {
-    const data = await personalRepository.hypercerts.create(params);
-    return data;
-  }
-};
-
 export const logout = async () => {
   const session = await getSession();
   if (!session) {
@@ -48,12 +39,13 @@ export const addContribution = async (params: {
   role: string;
   description?: string;
 }) => {
-  const personalRepository = await getAuthenticatedRepo("pds");
-  if (personalRepository) {
-    const data = await personalRepository.hypercerts.addContribution(params);
-    return data;
+  const ctx = await getRepoContext();
+
+  if (!ctx) {
+    throw new Error("Unable to get authenticated repository");
   }
-  throw new Error("Unable to get authenticated repository");
+
+  return ctx.scopedRepo.hypercerts.addContribution(params);
 };
 
 export const createOrganization = async (params: {

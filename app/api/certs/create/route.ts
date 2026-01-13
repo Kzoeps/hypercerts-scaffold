@@ -1,14 +1,9 @@
-import { getAuthenticatedRepo } from "@/lib/atproto-session";
+import { getRepoContext } from "@/lib/repo-context";
 import { CreateHypercertParams } from "@hypercerts-org/sdk-core";
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const activeDid =
-      cookieStore.get("active-did")?.value ||
-      cookieStore.get("user-did")?.value;
     const formData = await req.formData();
     const title = formData.get("title") as string | null;
     const shortDescription = formData.get("shortDescription") as string | null;
@@ -38,15 +33,15 @@ export async function POST(req: NextRequest) {
       image: image || undefined,
     };
 
-    const repository = await getAuthenticatedRepo();
-    if (!repository) {
+    const ctx = await getRepoContext();
+    if (!ctx) {
       return NextResponse.json(
         { error: "Could not authenticate repo" },
         { status: 401 }
       );
     }
-    const certsRepo = repository.repo(activeDid!);
-    const data = await certsRepo.hypercerts.create(hypercertParams);
+
+    const data = await ctx.scopedRepo.hypercerts.create(hypercertParams);
     return NextResponse.json(data);
   } catch (e) {
     console.error("Error creating hypercert:", e);
