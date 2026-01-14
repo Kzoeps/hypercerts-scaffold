@@ -92,6 +92,27 @@ export const addEvaluation = async (params: {
   });
 };
 
+export const addMeasurement = async (params: {
+  hypercertUri: string;
+  measurers: string[];
+  metric: string;
+  value: string;
+  methodUri?: string;
+  evidenceUris?: string[];
+}) => {
+  const ctx = await getRepoContext();
+  if (!ctx) {
+    throw new Error("Unable to get repository context");
+  }
+
+  const { hypercertUri, ...measurementData } = params;
+
+  return ctx.scopedRepo.hypercerts.addMeasurement({
+    ...measurementData,
+    hypercertUri,
+  });
+};
+
 export const createOrganization = async (params: {
   handlePrefix: string;
   description: string;

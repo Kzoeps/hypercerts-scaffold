@@ -1,23 +1,29 @@
 "use client";
 
+import { FormEventHandler, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileView } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
 import { Plus, PlusCircle, Trash } from "lucide-react";
-import { useState } from "react";
 import FormFooter from "./form-footer";
 import FormInfo from "./form-info";
 import UserAvatar from "./user-avatar";
 import UserSelection from "./user-selection";
+import { CreateHypercertResult } from "@hypercerts-org/sdk-core";
+import { useMutation } from "@tanstack/react-query";
+import { addMeasurement } from "@/lib/create-actions";
+import { toast } from "sonner";
 
 interface MeasurementFormProps {
+  hypercertInfo: CreateHypercertResult;
   onNext: () => void;
   onBack: () => void;
 }
 
 export default function MeasurementForm({
+  hypercertInfo,
   onNext,
   onBack,
 }: MeasurementFormProps) {
@@ -27,20 +33,23 @@ export default function MeasurementForm({
   const [value, setValue] = useState("");
 
   // Optional fields
-  const [useSubject, setUseSubject] = useState(false);
-  const [subjectUri, setSubjectUri] = useState("");
-  const [subjectCid, setSubjectCid] = useState("");
-
   const [useMethod, setUseMethod] = useState(false);
-  const [methodType, setMethodType] = useState("");
   const [methodUri, setMethodUri] = useState("");
 
   const [useEvidence, setUseEvidence] = useState(false);
   const [evidenceUris, setEvidenceUris] = useState<string[]>([""]);
 
-  const [useLocation, setUseLocation] = useState(false);
-  const [locationUri, setLocationUri] = useState("");
-  const [locationCid, setLocationCid] = useState("");
+  const mutation = useMutation({
+    mutationFn: addMeasurement,
+    onSuccess: () => {
+      toast.success("Measurement added!");
+      onNext();
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error("Failed to add measurement.");
+    },
+  });
 
   const addMeasurer = (user: ProfileView) => {
     if (!measurers.find((m) => m.did === user.did)) {
@@ -93,36 +102,28 @@ export default function MeasurementForm({
     setter(newUris);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    if (!hypercertInfo.hypercertUri) {
+      toast.error("Hypercert URI not found");
+      return;
+    }
+
     const allMeasurerDids = [
       ...measurers.map((m) => m.did),
       ...manualDids.filter((did) => did.trim() !== ""),
     ];
 
-    console.log({
+    mutation.mutate({
+      hypercertUri: hypercertInfo.hypercertUri,
       measurers: allMeasurerDids,
       metric,
       value,
-      ...(useSubject &&
-        subjectUri &&
-        subjectCid && {
-          subject: { uri: subjectUri, cid: subjectCid },
-        }),
-      ...(useMethod && {
-        ...(methodType && { methodType }),
-        ...(methodUri && { methodURI: methodUri }),
-      }),
+      ...(useMethod && { methodUri }),
       ...(useEvidence && {
-        evidenceURI: evidenceUris.filter((uri) => uri.trim() !== ""),
+        evidenceUris: evidenceUris.filter((uri) => uri.trim() !== ""),
       }),
-      ...(useLocation &&
-        locationUri &&
-        locationCid && {
-          location: { uri: locationUri, cid: locationCid },
-        }),
-      createdAt: new Date().toISOString(),
     });
-    onNext();
   };
 
   const hasMeasurers =
@@ -133,7 +134,7 @@ export default function MeasurementForm({
       title="Add Measurement"
       description="Record measurement data related to a hypercert."
     >
-      <div className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
         {/* Measurers */}
         <div className="space-y-2">
           <Label>Measurers *</Label>
@@ -158,6 +159,7 @@ export default function MeasurementForm({
                         variant="outline"
                         size="icon"
                         aria-label="Remove measurer"
+                        disabled={mutation.isPending}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
@@ -175,18 +177,24 @@ export default function MeasurementForm({
                     placeholder="did:plc:xyz123..."
                     value={did}
                     onChange={(e) => updateManualDid(index, e.target.value)}
+                    disabled={mutation.isPending}
                   />
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => removeManualDid(index)}
-                    disabled={manualDids.length === 1}
+                    disabled={manualDids.length === 1 || mutation.isPending}
                   >
                     <Trash className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
-              <Button variant="outline" size="sm" onClick={addManualDid}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addManualDid}
+                disabled={mutation.isPending}
+              >
                 <PlusCircle className="mr-2 h-4 w-4" /> Add DID
               </Button>
             </TabsContent>
@@ -203,10 +211,8 @@ export default function MeasurementForm({
             placeholder="e.g., CO2 emissions reduced, trees planted, people trained..."
             maxLength={500}
             required
+            disabled={mutation.isPending}
           />
-          <p className="text-xs text-muted-foreground">
-            {metric.length} / 500 characters
-          </p>
         </div>
 
         {/* Value */}
@@ -219,10 +225,8 @@ export default function MeasurementForm({
             placeholder="e.g., 1000 tons, 500 trees, 250 participants..."
             maxLength={500}
             required
+            disabled={mutation.isPending}
           />
-          <p className="text-xs text-muted-foreground">
-            {value.length} / 500 characters
-          </p>
         </div>
 
         {/* Method - Toggle */}
@@ -233,6 +237,7 @@ export default function MeasurementForm({
               variant={useMethod ? "default" : "outline"}
               size="sm"
               onClick={() => setUseMethod(!useMethod)}
+              disabled={mutation.isPending}
             >
               {useMethod ? (
                 <Trash className="mr-2 h-4 w-4" />
@@ -246,21 +251,6 @@ export default function MeasurementForm({
           {useMethod && (
             <div className="space-y-4 pl-4 border-l-2">
               <div className="space-y-2">
-                <Label htmlFor="method-type">Method Type</Label>
-                <Input
-                  id="method-type"
-                  type="text"
-                  placeholder="e.g., ISO-14064, GHG-Protocol, Direct-Count..."
-                  value={methodType}
-                  onChange={(e) => setMethodType(e.target.value)}
-                  maxLength={30}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {methodType.length} / 30 characters
-                </p>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="method-uri">Method URI</Label>
                 <Input
                   id="method-uri"
@@ -268,6 +258,7 @@ export default function MeasurementForm({
                   placeholder="https://example.com/methodology.pdf"
                   value={methodUri}
                   onChange={(e) => setMethodUri(e.target.value)}
+                  disabled={mutation.isPending}
                 />
               </div>
             </div>
@@ -282,6 +273,7 @@ export default function MeasurementForm({
               variant={useEvidence ? "default" : "outline"}
               size="sm"
               onClick={() => setUseEvidence(!useEvidence)}
+              disabled={mutation.isPending}
             >
               {useEvidence ? (
                 <Trash className="mr-2 h-4 w-4" />
@@ -294,7 +286,7 @@ export default function MeasurementForm({
 
           {useEvidence && (
             <div className="space-y-2 pl-4 border-l-2">
-              <Label>Evidence URIs (max 50)</Label>
+              <Label>Evidence URIs</Label>
               {evidenceUris.map((uri, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
@@ -309,6 +301,7 @@ export default function MeasurementForm({
                         setEvidenceUris
                       )
                     }
+                    disabled={mutation.isPending}
                   />
                   <Button
                     variant="ghost"
@@ -316,75 +309,32 @@ export default function MeasurementForm({
                     onClick={() =>
                       removeUriInput(index, evidenceUris, setEvidenceUris)
                     }
-                    disabled={evidenceUris.length === 1}
+                    disabled={evidenceUris.length === 1 || mutation.isPending}
                   >
                     <Trash className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
-              {evidenceUris.length < 50 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addUriInput(evidenceUris, setEvidenceUris)}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Evidence URI
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => addUriInput(evidenceUris, setEvidenceUris)}
+                disabled={mutation.isPending}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Evidence URI
+              </Button>
             </div>
           )}
         </div>
-
-        {/* Location Reference - Toggle */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant={useLocation ? "default" : "outline"}
-              size="sm"
-              onClick={() => setUseLocation(!useLocation)}
-            >
-              {useLocation ? (
-                <Trash className="mr-2 h-4 w-4" />
-              ) : (
-                <Plus className="mr-2 h-4 w-4" />
-              )}
-              {useLocation ? "Remove Location" : "Add Location"}
-            </Button>
-          </div>
-
-          {useLocation && (
-            <div className="space-y-4 pl-4 border-l-2">
-              <Label>Location Reference</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="location-uri"
-                    className="text-xs text-muted-foreground"
-                  >
-                    URI
-                  </Label>
-                  <Input
-                    id="location-uri"
-                    type="text"
-                    value={locationUri}
-                    onChange={(e) => setLocationUri(e.target.value)}
-                    placeholder="at://did:plc:..."
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <FormFooter
-        onBack={onBack}
-        onSkip={onNext}
-        saving={false}
-        submitLabel={"Save & Next"}
-        savingLabel={""}
-      />
+        <FormFooter
+          onBack={onBack}
+          onSkip={onNext}
+          saving={mutation.isPending}
+          isNextDisabled={!hasMeasurers || !metric || !value || mutation.isPending}
+          submitLabel={"Save & Next"}
+          savingLabel={"Saving..."}
+        />
+      </form>
     </FormInfo>
   );
 }

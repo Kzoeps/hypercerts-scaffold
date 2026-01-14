@@ -61,8 +61,12 @@ export default function Home() {
           onBack={previousStepper}
         />
       )}
-      {step === 6 && (
-        <MeasurementForm onNext={nextStepper} onBack={previousStepper} />
+      {step === 6 && hypercertInfo && (
+        <MeasurementForm
+          hypercertInfo={hypercertInfo}
+          onNext={nextStepper}
+          onBack={previousStepper}
+        />
       )}
       {step === 7 && (
         <HypercertCompletionStep
