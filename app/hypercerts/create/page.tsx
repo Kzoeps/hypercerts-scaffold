@@ -55,14 +55,14 @@ export default function Home() {
         />
       )}
       {step === 5 && hypercertInfo && (
-        <EvaluationForm
+        <MeasurementForm
           hypercertInfo={hypercertInfo}
           onNext={nextStepper}
           onBack={previousStepper}
         />
       )}
       {step === 6 && hypercertInfo && (
-        <MeasurementForm
+        <EvaluationForm
           hypercertInfo={hypercertInfo}
           onNext={nextStepper}
           onBack={previousStepper}
