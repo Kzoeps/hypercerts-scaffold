@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { addContribution } from "@/lib/create-actions";
 import { BaseHypercertFormProps } from "@/lib/types";
 import { ProfileView } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
-import { Trash } from "lucide-react";
+import { Trash, PlusCircle } from "lucide-react";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import { DatePicker } from "./date-range-picker";
@@ -13,6 +13,7 @@ import FormFooter from "./form-footer";
 import FormInfo from "./form-info";
 import UserAvatar from "./user-avatar";
 import UserSelection from "./user-selection";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 export default function HypercertContributionForm({
   hypercertInfo,
@@ -24,6 +25,7 @@ export default function HypercertContributionForm({
 }) {
   const [role, setRole] = useState("");
   const [contributors, setContributors] = useState<ProfileView[]>([]);
+  const [manualContributors, setManualContributors] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
   const [workTimeframeFrom, setWorkTimeframeFrom] = useState<Date>();
   const [workTimeframeTo, setWorkTimeframeTo] = useState<Date>();
@@ -45,10 +47,26 @@ export default function HypercertContributionForm({
     setContributors(filtered);
   };
 
+  const addManualContributor = () => {
+    setManualContributors([...manualContributors, ""]);
+  };
+
+  const removeManualContributor = (index: number) => {
+    setManualContributors(manualContributors.filter((_, i) => i !== index));
+  };
+
+  const updateManualContributor = (index: number, value: string) => {
+    const newManualContributors = [...manualContributors];
+    newManualContributors[index] = value;
+    setManualContributors(newManualContributors);
+  };
+
   const handleContributionCreation = async () => {
-    const mappedContributors = contributors
-      .filter((contributor) => !!contributor)
-      .map(({ did }) => did);
+    const mappedContributors = [
+      ...contributors.map(({ did }) => did),
+      ...manualContributors.filter((uri) => uri.trim() !== ""),
+    ];
+
     if (!mappedContributors.length) return;
     const contributionRecord = {
       hypercertUri: hypercertInfo?.hypercertUri,
@@ -83,6 +101,9 @@ export default function HypercertContributionForm({
     }
   };
 
+  const hasContributors =
+    contributors.length > 0 || manualContributors.some((c) => c.trim() !== "");
+
   return (
     <FormInfo
       stepLabel="Step 2 of 5 . Evidence"
@@ -99,34 +120,72 @@ export default function HypercertContributionForm({
             onChange={(e) => setRole(e.target.value)}
             maxLength={100}
             required
+            disabled={saving}
           />
         </div>
-        <div className="space-y-2"></div>
 
         <div className="space-y-2">
-          <Label>Contributors (DIDs) *</Label>
-          <div className="space-y-2">
-            <UserSelection onUserSelect={addContributor} />
-            <div className="flex flex-col gap-2">
-              {contributors.map((contributor) => (
-                <div
-                  key={contributor.did}
-                  className="flex justify-between gap-4 border p-2 rounded-md"
-                >
-                  <UserAvatar user={contributor} />
-                  <Button
-                    onClick={() => removeContributor(contributor)}
-                    variant={"outline"}
-                    size={"icon"}
-                    aria-label="delete"
-                    type="button"
+          <Label>Contributors *</Label>
+          <Tabs defaultValue="search" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="search">Search Users</TabsTrigger>
+              <TabsTrigger value="manual">Enter URI or DID</TabsTrigger>
+            </TabsList>
+            <TabsContent value="search" className="space-y-2 pt-2">
+              <UserSelection onUserSelect={addContributor} />
+              <div className="flex flex-col gap-2">
+                {contributors.map((contributor) => (
+                  <div
+                    key={contributor.did}
+                    className="flex justify-between items-center gap-4 border p-2 rounded-md"
                   >
-                    <Trash />
+                    <UserAvatar user={contributor} />
+                    <Button
+                      onClick={() => removeContributor(contributor)}
+                      variant={"outline"}
+                      size={"icon"}
+                      aria-label="delete"
+                      type="button"
+                      disabled={saving}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="manual" className="space-y-2 pt-2">
+              {manualContributors.map((uri, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    placeholder="at://did:plc:..., https://..., did:eth:..."
+                    value={uri}
+                    onChange={(e) =>
+                      updateManualContributor(index, e.target.value)
+                    }
+                    disabled={saving}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeManualContributor(index)}
+                    disabled={manualContributors.length === 1 || saving}
+                  >
+                    <Trash className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
-            </div>
-          </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addManualContributor}
+                disabled={saving}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Contributor
+              </Button>
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div className="space-y-2">
@@ -138,6 +197,7 @@ export default function HypercertContributionForm({
             onChange={(e) => setDescription(e.target.value)}
             maxLength={2000}
             rows={4}
+            disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
             {description.length} / 2000 characters
@@ -167,6 +227,7 @@ export default function HypercertContributionForm({
           submitLabel="Save & Next"
           savingLabel="Saving…"
           saving={saving}
+          submitDisabled={!hasContributors || !role || saving}
         />
       </form>
     </FormInfo>
