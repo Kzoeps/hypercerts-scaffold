@@ -20,8 +20,8 @@ export default function FormInfo({
   children: ReactNode;
 }) {
   return (
-    <div className="p-6">
-      <div className="max-w-3xl mx-auto">
+    <div className="">
+      <div className="max-w-4xl mx-auto">
         <Card className="shadow-lg">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">

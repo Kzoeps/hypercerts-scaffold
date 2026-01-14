@@ -1,11 +1,10 @@
-import { getAuthenticatedRepo } from "@/lib/atproto-session";
+import { getRepoContext } from "@/lib/repo-context";
 import { CreateHypercertParams } from "@hypercerts-org/sdk-core";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-
     const title = formData.get("title") as string | null;
     const shortDescription = formData.get("shortDescription") as string | null;
     const description = formData.get("description") as string | null;
@@ -34,17 +33,15 @@ export async function POST(req: NextRequest) {
       image: image || undefined,
     };
 
-    const personalRepository = await getAuthenticatedRepo("pds");
-    if (!personalRepository) {
+    const ctx = await getRepoContext();
+    if (!ctx) {
       return NextResponse.json(
         { error: "Could not authenticate repo" },
         { status: 401 }
       );
     }
 
-    const data = await personalRepository.hypercerts.create(hypercertParams);
-    console.log("Creation data", data);
-
+    const data = await ctx.scopedRepo.hypercerts.create(hypercertParams);
     return NextResponse.json(data);
   } catch (e) {
     console.error("Error creating hypercert:", e);
