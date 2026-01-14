@@ -6,6 +6,7 @@ import { getPDSlsURI } from "@/lib/utils";
 
 import HypercertMeasurementsSection from "./hypercert-measurements-section";
 import type { HypercertClaim } from "@hypercerts-org/sdk-core";
+import HypercertEvaluationsSection from "./hypercert-evaluations-section";
 
 export default function HypercertDetailsView({
   hypercertUri,
@@ -103,7 +104,7 @@ export default function HypercertDetailsView({
       </dl>
 
       <HypercertMeasurementsSection hypercertUri={hypercertUri} />
+      <HypercertEvaluationsSection hypercertUri={hypercertUri} />
     </div>
   );
 }
-
