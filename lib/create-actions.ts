@@ -184,11 +184,11 @@ export const createOrganization = async (params: {
 export const addCollaboratorToOrganization = async (
   params: GrantAccessParams
 ) => {
-  const ctx = await getRepoContext({ serverOverride: "sds" });
+  const ctx = await getRepoContext({ serverOverride: "sds", targetDid: params.repoDid });
   if (!ctx) {
     throw new Error("Unable to get repository context");
   }
-  const result = await ctx.repository.collaborators.grant(params);
+  const result = await ctx.scopedRepo.collaborators.grant(params);
   revalidatePath(`/organizations/${encodeURIComponent(params.repoDid)}`);
   return result;
 };
@@ -197,11 +197,11 @@ export const removeCollaborator = async (params: {
   userDid: string;
   repoDid: string;
 }) => {
-  const ctx = await getRepoContext({ serverOverride: "sds" });
+  const ctx = await getRepoContext({ serverOverride: "sds", targetDid: params.repoDid });
   if (!ctx) {
     throw new Error("Unable to get repository context");
   }
-  const result = await ctx.repository.collaborators.revoke(params);
+  const result = await ctx.scopedRepo.collaborators.revoke(params);
   revalidatePath(`/organizations/[orgDid]`, "page");
   return result;
 };
