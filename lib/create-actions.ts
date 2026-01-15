@@ -1,5 +1,6 @@
 "use server";
 import { getRepoContext } from "@/lib/repo-context";
+import { resolveRecordBlobs } from "./blob-utils";
 
 import { RepositoryRole } from "@hypercerts-org/sdk-core";
 import { revalidatePath } from "next/cache";
@@ -119,15 +120,16 @@ export const getMeasurementRecord = async (params: {
   rkey: string;
 }) => {
   const { did, collection, rkey } = params;
-  console.log("params", params);
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
     throw new Error("Unable to get repository context");
   }
 
   const data = await ctx.scopedRepo.records.get({ collection, rkey });
-  console.log("Measurement DATA", data)
-  return data
+  if (data?.value) {
+    data.value = await resolveRecordBlobs(data.value, did);
+  }
+  return JSON.parse(JSON.stringify(data));
 };
 
 export const getEvaluationRecord = async (params: {
@@ -141,7 +143,29 @@ export const getEvaluationRecord = async (params: {
     throw new Error("Unable to get repository context");
   }
 
-  return ctx.scopedRepo.records.get({ collection, rkey });
+  const data = await ctx.scopedRepo.records.get({ collection, rkey });
+  if (data?.value) {
+    data.value = await resolveRecordBlobs(data.value, did);
+  }
+  return JSON.parse(JSON.stringify(data));
+};
+
+export const getEvidenceRecord = async (params: {
+  did: string;
+  collection: string;
+  rkey: string;
+}) => {
+  const { did, collection, rkey } = params;
+  const ctx = await getRepoContext({ targetDid: did });
+  if (!ctx) {
+    throw new Error("Unable to get repository context");
+  }
+
+  const data = await ctx.scopedRepo.records.get({ collection, rkey });
+  if (data?.value) {
+    data.value = await resolveRecordBlobs(data.value, did);
+  }
+  return JSON.parse(JSON.stringify(data));
 };
 
 export const createOrganization = async (params: {
