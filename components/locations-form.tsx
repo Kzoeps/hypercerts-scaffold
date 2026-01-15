@@ -100,7 +100,7 @@ export default function HypercertLocationForm({
       const result = await response.json();
       console.log(result);
       toast.success("Location Added Successfully");
-      onNext?.(); 
+      onNext?.();
     } catch (error) {
       console.error("Error assembling FormData:", error);
       toast.error("Failed to assemble FormData");
@@ -206,6 +206,7 @@ export default function HypercertLocationForm({
         </div>
         <LinkFileSelector
           label="Location Data *"
+          fileUploadDisabled={false}
           mode={contentMode}
           onModeChange={setContentMode}
           urlPlaceholder="https://example.com/location.json"
