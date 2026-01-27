@@ -1,36 +1,213 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hypercerts Scaffold
 
-## Getting Started
+A Next.js scaffold for building applications on ATProto using the Hypercerts SDK. This project demonstrates authentication, organization management, and hypercert creation on the ATProto network.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20+ 
+- Redis instance (for session & state storage)
+- A PDS/SDS account for testing
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Clone the repository
+git clone <repository-url>
+cd hypercerts-scaffold
+
+# Install dependencies
+pnpm install
+
+# Copy environment file and configure
+cp .env.example .env.local
+
+# Run the development server
+pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Required Variables
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_APP_URL` | Your application's base URL (e.g., `http://localhost:3000` or ngrok url, eg: `https://<random>.ngrok-free.app`) |
+| `ATPROTO_JWK_PRIVATE` | Private JWK for OAuth authentication |
+| `REDIS_URL` | Redis connection URL |
+| `REDIS_PASSWORD` | Redis password |
+| `NEXT_PUBLIC_PDS_URL` | Personal Data Server URL |
+| `NEXT_PUBLIC_SDS_URL` | Shared Data Server URL |
+
+### Test Server URLs
+
+For development and testing, use these servers:
+
+```env
+NEXT_PUBLIC_PDS_URL=https://pds-eu-west4.test.certified.app
+NEXT_PUBLIC_SDS_URL=https://sds-eu-west4.test.certified.app
+```
+
+Currently  the loopback client URL does not work so ngrok is required for development purposes.
+
+Once you have the URL from ngrok replace `NEXT_PUBLIC_APP_URL` with ngrok url
+
+### Generating the JWK Private Key
+
+The `ATPROTO_JWK_PRIVATE` is a JSON Web Key used for OAuth authentication. Generate one using the `jose` library:
+
+```typescript
+import { generateKeyPair, exportJWK } from 'jose';
+
+const { privateKey } = await generateKeyPair('ES256');
+const jwk = await exportJWK(privateKey);
+
+// Add required properties
+jwk.kid = crypto.randomUUID();
+jwk.alg = 'ES256';
+jwk.use = 'sig';
+
+console.log(JSON.stringify({ keys: [jwk] }));
+```
+
+The resulting JWK should look like this:
+
+```json
+{"keys":[{"kty":"EC","x":"...","y":"...","crv":"P-256","d":"...","kid":"...","alg":"ES256","use":"sig"}]}
+```
+
+Set this as your `ATPROTO_JWK_PRIVATE` environment variable (wrap in single quotes in `.env.local`).
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Client (Browser)                         │
+│         OAuthProvider  │  SessionProvider  │  React Query        │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│            Next.js API Routes OR Server Actions                 │
+│       /api/auth/*  │  /api/certs/*  │  /api/profile/*           │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Hypercerts SDK (sdk-core)                    │
+│       OAuth Client  │  Session Management  │  Repository Ops     │
+└───────────┬─────────────────────┬───────────────────┬───────────┘
+            │                     │                   │
+            ▼                     ▼                   ▼
+     ┌───────────┐         ┌───────────┐       ┌───────────┐
+     │   Redis   │         │    PDS    │       │    SDS    │
+     │ (sessions)│         │ (personal)│       │  (shared) │
+     └───────────┘         └───────────┘       └───────────┘
+```
+
+### PDS vs SDS
+
+- **PDS (Personal Data Server)**: Stores personal user data - your profile, your personal hypercerts
+- **SDS (Shared Data Server)**: Stores organization data - collaborative repositories where multiple users can contribute
+
+The SDK automatically routes requests to the correct server based on the target DID. Since a user can be part of multiple organizations we also have a switch profile button to switch between different organizations.
+
+## Authentication
+
+### How It Works
+
+This scaffold uses OAuth 2.0 with DPoP (Demonstrating Proof of Possession) for authentication, implemented via the Hypercerts SDK.
+
+**Flow:**
+1. User enters their handle
+2. Application redirects to the ATProto authorization server
+3. User approves the application
+4. Callback receives the session and stores it in Redis
+// Note this will be updated since it is unsafe to restore session using the user-did
+5. A `user-did` cookie tracks the authenticated user
+
+### Server-Side Authentication
+
+Use `getRepoContext()` to get an authenticated repository in server components or API routes:
+
+```typescript
+import { getRepoContext } from "@/lib/repo-context";
+
+export async function GET() {
+  const ctx = await getRepoContext();
+  
+  if (!ctx) {
+    return Response.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  
+  // ctx.userDid - the authenticated user's DID
+  // ctx.activeDid - currently active profile (user or org)
+  // ctx.scopedRepo - repository scoped to target DID
+  
+  const profile = await ctx.scopedRepo.profile.get();
+  return Response.json(profile);
+}
+```
+
+## Working with Organizations
+
+Organizations are shared repositories on the SDS that allow multiple users to collaborate under a single identity.
+
+```typescript
+import { getRepoContext } from "@/lib/repo-context";
+
+export async function GET() {
+  const ctx = await getRepoContext({ targetDid: "the_organization_did"});
+  
+  if (!ctx) {
+    return Response.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  
+  // ctx.userDid - the authenticated user's DID
+  // ctx.activeDid - currently active profile (user or org)
+  // ctx.scopedRepo - repository scoped to target DID
+  
+  const profile = await ctx.scopedRepo.profile.get();
+  return Response.json(profile);
+}
+```
+
+## Project Structure
+
+```
+├── app/
+│   ├── api/
+│   │   ├── auth/           # Authentication endpoints
+│   │   ├── certs/          # Hypercert operations
+│   │   └── profile/        # Profile management
+│   ├── hypercerts/         # Hypercert pages
+│   ├── organizations/      # Organization pages
+│   └── profile/            # Profile page
+├── components/             # React components
+├── lib/
+│   ├── api/                # Centralized API client
+│   ├── create-actions.ts   # Server actions
+│   ├── hypercerts-sdk.ts   # SDK initialization
+│   ├── repo-context.ts     # Repository context helper
+│   └── ...
+├── providers/              # React context providers
+├── queries/                # TanStack Query hooks
+└── lexicons/               # ATProto lexicon definitions
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `lib/hypercerts-sdk.ts` | SDK initialization and configuration |
+| `lib/repo-context.ts` | Helper to get authenticated repository context |
+| `lib/create-actions.ts` | Server actions for common operations |
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ATProto Documentation](https://atproto.com/docs)
+- [Hypercerts Documentation](https://hypercerts.org/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Hypercerts SDK](https://github.com/hypercerts-org/hypercerts-sdk)
+- [SDS](https://github.com/hypercerts-org/atproto/tree/sds)
