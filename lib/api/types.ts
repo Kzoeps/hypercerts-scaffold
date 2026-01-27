@@ -35,18 +35,31 @@ export interface CreateHypercertRequest {
 
 export type CreateHypercertResponse = CreateHypercertResult;
 
-export interface AddEvidenceRequest {
+// Location parameter for attachments - can be a string (AT-URI) or full location creation params
+export type AttachmentLocationParam =
+  | string
+  | {
+      lpVersion: string;
+      srs: string;
+      locationType: string;
+      location: string | File;
+      name?: string;
+      description?: string;
+    };
+
+export interface AddAttachmentRequest {
   title: string;
   shortDescription: string;
   description?: string;
-  relationType?: string;
+  contentType?: string;
   hypercertUri: string;
   evidenceMode: "link" | "file";
   evidenceUrl?: string;
   evidenceFile?: File;
+  location?: AttachmentLocationParam;
 }
 
-export interface AddEvidenceResponse {
+export interface AddAttachmentResponse {
   success: boolean;
 }
 

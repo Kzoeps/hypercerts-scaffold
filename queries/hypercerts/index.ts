@@ -1,5 +1,5 @@
 export { useCreateHypercertMutation } from "./use-create-hypercert-mutation";
-export { useAddEvidenceMutation } from "./use-add-evidence-mutation";
+export { useAddAttachmentMutation } from "./use-add-attachment-mutation";
 export { useAddLocationMutation } from "./use-add-location-mutation";
 export {
   useEvidenceLinksQuery,

@@ -607,8 +607,16 @@ export default function MeasurementForm({
           )}
         </div>
 
-        {/* Locations - Toggle */}
-        <div className="space-y-4">
+        {/* Locations Section */}
+        <div className="space-y-6 pt-6 border-t">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            <h3 className="text-lg font-semibold">Locations (Optional)</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Add geographic location information for this measurement
+          </p>
+
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -625,14 +633,14 @@ export default function MeasurementForm({
               {useLocations ? (
                 <Trash className="mr-2 h-4 w-4" />
               ) : (
-                <MapPin className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
               )}
               {useLocations ? "Remove Locations" : "Add Locations"}
             </Button>
           </div>
 
           {useLocations && (
-            <div className="space-y-6 pl-4 border-l-2">
+            <div className="space-y-6">
               {locationEntries.map((entry, idx) => (
                 <div
                   key={entry.id}
