@@ -4,8 +4,9 @@ A Next.js scaffold for building applications on ATProto using the Hypercerts SDK
 
 ## Prerequisites
 
-- Node.js 20+ 
-- Redis instance (for session & state storage)
+- Node.js 20+
+- Redis instance (for session & state storage), e.g.
+  `docker run -d -p 6379:6379 redis:alpine`
 - A PDS/SDS account for testing
 
 ## Quick Start
