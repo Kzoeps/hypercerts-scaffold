@@ -24,7 +24,7 @@ importers:
         specifier: 0.10.0-beta.3
         version: 0.10.0-beta.3(@atproto/xrpc@0.7.7)
       '@hypercerts-org/sdk-core':
-        specifier: file:./vendor/hypercerts-org-sdk-core-0.10.0-beta.7.tgz
+        specifier: file:vendor/hypercerts-org-sdk-core-0.10.0-beta.7.tgz
         version: file:vendor/hypercerts-org-sdk-core-0.10.0-beta.7.tgz(@atproto/xrpc@0.7.7)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12

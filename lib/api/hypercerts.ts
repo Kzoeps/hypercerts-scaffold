@@ -61,6 +61,10 @@ export async function createHypercertFromParams(
     formData.append("image", params.image);
   }
 
+  if (params.contributions) {
+    formData.append("contributions", JSON.stringify(params.contributions));
+  }
+
   return apiClientFormData<CreateHypercertResponse>(
     "/api/certs/create",
     formData
