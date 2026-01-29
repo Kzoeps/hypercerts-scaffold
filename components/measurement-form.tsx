@@ -6,17 +6,58 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 import { ProfileView } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
+import { Calendar, MapPin, Plus, PlusCircle, Trash, Wand2 } from "lucide-react";
 import { Calendar, MapPin, Plus, PlusCircle, Trash, Wand2 } from "lucide-react";
 import FormFooter from "./form-footer";
 import FormInfo from "./form-info";
 import UserAvatar from "./user-avatar";
 import UserSelection from "./user-selection";
 import LinkFileSelector from "./link-file-selector";
+import LinkFileSelector from "./link-file-selector";
 import { CreateHypercertResult } from "@hypercerts-org/sdk-core";
 import { useMutation } from "@tanstack/react-query";
 import { addMeasurement, MeasurementLocationParam } from "@/lib/create-actions";
+import { addMeasurement, MeasurementLocationParam } from "@/lib/create-actions";
 import { toast } from "sonner";
+
+// Location entry type for the form
+type LocationEntryMode = "string" | "create";
+type LocationTypePreset = "coordinate-decimal" | "geojson-point" | "other";
+type LocationContentMode = "link" | "file";
+
+interface LocationEntry {
+  id: string;
+  mode: LocationEntryMode;
+  // For "string" mode - simple AT-URI or reference string
+  stringValue: string;
+  // For "create" mode - full location creation
+  lpVersion: string;
+  srs: string;
+  locationType: LocationTypePreset;
+  locationTypeCustom: string;
+  name: string;
+  description: string;
+  contentMode: LocationContentMode;
+  locationUrl: string;
+  locationFile: File | null;
+}
+
+const createEmptyLocationEntry = (): LocationEntry => ({
+  id: crypto.randomUUID(),
+  mode: "string",
+  stringValue: "",
+  lpVersion: "1.0.0",
+  srs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+  locationType: "coordinate-decimal",
+  locationTypeCustom: "",
+  name: "",
+  description: "",
+  contentMode: "link",
+  locationUrl: "",
+  locationFile: null,
+});
 
 // Location entry type for the form
 type LocationEntryMode = "string" | "create";
@@ -225,6 +266,64 @@ export default function MeasurementForm({
   ) => {
     const newUris = uris.filter((_, i) => i !== index);
     setter(newUris);
+  };
+
+  // Location entry helpers
+  const addLocationEntry = () => {
+    setLocationEntries([...locationEntries, createEmptyLocationEntry()]);
+  };
+
+  const removeLocationEntry = (id: string) => {
+    setLocationEntries(locationEntries.filter((entry) => entry.id !== id));
+  };
+
+  const updateLocationEntry = (
+    id: string,
+    updates: Partial<LocationEntry>
+  ) => {
+    setLocationEntries(
+      locationEntries.map((entry) =>
+        entry.id === id ? { ...entry, ...updates } : entry
+      )
+    );
+  };
+
+  // Build location params for submission
+  const buildLocationParams = (): MeasurementLocationParam[] => {
+    return locationEntries
+      .map((entry) => {
+        if (entry.mode === "string") {
+          return entry.stringValue.trim();
+        } else {
+          const effectiveLocationType =
+            entry.locationType === "other"
+              ? entry.locationTypeCustom.trim() || "coordinate-decimal"
+              : entry.locationType;
+
+          const locationData =
+            entry.contentMode === "link"
+              ? entry.locationUrl.trim()
+              : entry.locationFile;
+
+          if (!locationData) return null;
+
+          return {
+            lpVersion: entry.lpVersion,
+            srs: entry.srs,
+            locationType: effectiveLocationType,
+            location: locationData,
+            ...(entry.name.trim() && { name: entry.name.trim() }),
+            ...(entry.description.trim() && {
+              description: entry.description.trim(),
+            }),
+          };
+        }
+      })
+      .filter((loc): loc is MeasurementLocationParam => {
+        if (loc === null) return false;
+        if (typeof loc === "string") return loc !== "";
+        return true;
+      });
   };
 
   // Location entry helpers
@@ -607,8 +706,16 @@ export default function MeasurementForm({
           )}
         </div>
 
-        {/* Locations - Toggle */}
-        <div className="space-y-4">
+        {/* Locations Section */}
+        <div className="space-y-6 pt-6 border-t">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            <h3 className="text-lg font-semibold">Locations (Optional)</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Add geographic location information for this measurement
+          </p>
+
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -625,14 +732,14 @@ export default function MeasurementForm({
               {useLocations ? (
                 <Trash className="mr-2 h-4 w-4" />
               ) : (
-                <MapPin className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
               )}
               {useLocations ? "Remove Locations" : "Add Locations"}
             </Button>
           </div>
 
           {useLocations && (
-            <div className="space-y-6 pl-4 border-l-2">
+            <div className="space-y-6">
               {locationEntries.map((entry, idx) => (
                 <div
                   key={entry.id}

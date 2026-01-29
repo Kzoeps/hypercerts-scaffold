@@ -6,8 +6,9 @@ import { apiClientFormData } from "./client";
 import type {
   CreateHypercertRequest,
   CreateHypercertResponse,
-  AddEvidenceResponse,
+  AddAttachmentResponse,
   AddLocationResponse,
+  AttachmentLocationParam,
 } from "./types";
 
 /**
@@ -60,6 +61,10 @@ export async function createHypercertFromParams(
     formData.append("image", params.image);
   }
 
+  if (params.contributions) {
+    formData.append("contributions", JSON.stringify(params.contributions));
+  }
+
   return apiClientFormData<CreateHypercertResponse>(
     "/api/certs/create",
     formData
@@ -67,18 +72,19 @@ export async function createHypercertFromParams(
 }
 
 /**
- * Add evidence to a hypercert
+ * Add attachment to a hypercert
  */
-export async function addEvidence(params: {
+export async function addAttachment(params: {
   title: string;
   shortDescription: string;
   description?: string;
-  relationType?: string;
+  contentType?: string;
   hypercertUri: string;
   evidenceMode: "link" | "file";
   evidenceUrl?: string;
   evidenceFile?: File;
-}): Promise<AddEvidenceResponse> {
+  location?: AttachmentLocationParam;
+}): Promise<AddAttachmentResponse> {
   const formData = new FormData();
   formData.append("title", params.title);
   formData.append("shortDescription", params.shortDescription);
@@ -86,8 +92,8 @@ export async function addEvidence(params: {
   if (params.description) {
     formData.append("description", params.description);
   }
-  if (params.relationType) {
-    formData.append("relationType", params.relationType);
+  if (params.contentType) {
+    formData.append("contentType", params.contentType);
   }
   
   formData.append("hypercertUri", params.hypercertUri);
@@ -99,8 +105,31 @@ export async function addEvidence(params: {
     formData.append("evidenceFile", params.evidenceFile);
   }
 
-  return apiClientFormData<AddEvidenceResponse>(
-    "/api/certs/add-evidence",
+  // Handle location parameter
+  if (params.location) {
+    if (typeof params.location === "string") {
+      formData.append("locationMode", "string");
+      formData.append("locationString", params.location);
+    } else {
+      formData.append("locationMode", "create");
+      formData.append("lpVersion", params.location.lpVersion);
+      formData.append("srs", params.location.srs);
+      formData.append("locationType", params.location.locationType);
+      if (params.location.name) formData.append("locationName", params.location.name);
+      if (params.location.description) formData.append("locationDescription", params.location.description);
+      
+      if (typeof params.location.location === "string") {
+        formData.append("locationContentMode", "link");
+        formData.append("locationUrl", params.location.location);
+      } else {
+        formData.append("locationContentMode", "file");
+        formData.append("locationFile", params.location.location);
+      }
+    }
+  }
+
+  return apiClientFormData<AddAttachmentResponse>(
+    "/api/certs/add-attachment",
     formData
   );
 }

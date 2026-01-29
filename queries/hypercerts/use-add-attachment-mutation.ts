@@ -2,33 +2,35 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { addEvidence } from "@/lib/api/hypercerts";
+import { addAttachment } from "@/lib/api/hypercerts";
 import { queryKeys } from "@/lib/api/query-keys";
+import { AttachmentLocationParam } from "@/lib/api/types";
 
-interface AddEvidenceParams {
+interface AddAttachmentParams {
   title: string;
   shortDescription: string;
   description?: string;
-  relationType?: string;
+  contentType?: string;
   hypercertUri: string;
   evidenceMode: "link" | "file";
   evidenceUrl?: string;
   evidenceFile?: File;
+  location?: AttachmentLocationParam;
 }
 
-interface UseAddEvidenceMutationOptions {
+interface UseAddAttachmentMutationOptions {
   onSuccess?: () => void;
 }
 
-export function useAddEvidenceMutation(
-  options?: UseAddEvidenceMutationOptions
+export function useAddAttachmentMutation(
+  options?: UseAddAttachmentMutationOptions
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (params: AddEvidenceParams) => addEvidence(params),
+    mutationFn: (params: AddAttachmentParams) => addAttachment(params),
     onSuccess: (_, variables) => {
-      toast.success("Evidence added successfully!");
+      toast.success("Attachment added successfully!");
       // Invalidate evidence queries for this hypercert
       queryClient.invalidateQueries({
         queryKey: queryKeys.hypercerts.evidence(variables.hypercertUri),
@@ -36,8 +38,8 @@ export function useAddEvidenceMutation(
       options?.onSuccess?.();
     },
     onError: (error) => {
-      console.error("Add evidence error:", error);
-      toast.error("Failed to add evidence");
+      console.error("Add attachment error:", error);
+      toast.error("Failed to add attachment");
     },
   });
 }
