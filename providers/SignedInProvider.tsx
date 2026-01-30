@@ -1,6 +1,7 @@
 import LoginDialog from "@/components/login-dialog";
 import Navbar from "@/components/navbar";
 import { getSession, getAuthenticatedRepo } from "@/lib/atproto-session";
+import { getBlobURL } from "@/lib/utils";
 import { cookies } from "next/headers";
 
 export async function SignedInProvider({
@@ -20,13 +21,13 @@ export async function SignedInProvider({
   if (session) {
     const repo = await getAuthenticatedRepo("pds");
     const profile = repo ? await repo.profile.get() : null;
-    avatarUrl = profile?.avatar || "";
+    avatarUrl = profile?.avatar
     handle = profile?.handle || "";
 
     if (activeDid && activeDid !== session.did) {
       const orgRepo = await getAuthenticatedRepo("sds");
       const org = orgRepo ? await orgRepo.organizations.get(activeDid) : null;
-      if (org) {
+      if (org)  {
         activeProfileName = org.name;
         activeProfileHandle = org.handle;
       }
