@@ -35,13 +35,13 @@ export default async function MyHypercertsPage({
 }: {
   searchParams?: Promise<{ profileDid: string }>;
 }) {
-  const ctx = await getRepoContext();
-  const session = await getSession();
-  const params = await searchParams;
+  const [ctx, session, params] = await Promise.all([
+    getRepoContext(),
+    getSession(),
+    searchParams,
+  ]);
 
   if (!ctx || !session) redirect("/");
-
-  const { organizations } = await listOrgs();
 
   const profileDidParam = params?.profileDid;
   const selectedDid =
@@ -49,7 +49,10 @@ export default async function MyHypercertsPage({
       ? profileDidParam
       : ctx.activeDid;
 
-  const viewCtx = await getRepoContext({ targetDid: selectedDid });
+  const [{ organizations }, viewCtx] = await Promise.all([
+    listOrgs(),
+    getRepoContext({ targetDid: selectedDid }),
+  ]);
   if (!viewCtx) redirect("/");
 
   const chipHref = (did: string) => `?profileDid=${encodeURIComponent(did)}`;
