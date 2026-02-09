@@ -26,7 +26,9 @@ cp .env.example .env.local
 pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the application.
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) to see the application.
+
+> **Note**: If you access `http://localhost:3000`, you'll be automatically redirected to `http://127.0.0.1:3000`. This ensures RFC 8252 compliance for OAuth loopback clients, which requires using IP addresses instead of hostnames for security. See the [Localhost Redirect](#localhost-redirect) section for details.
 
 ## Environment Configuration
 
@@ -34,12 +36,23 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_APP_URL` | Your application's base URL (e.g., `http://localhost:3000` or ngrok url, eg: `https://<random>.ngrok-free.app`) |
-| `ATPROTO_JWK_PRIVATE` | Private JWK for OAuth authentication |
-| `REDIS_URL` | Redis connection URL |
+| `NEXT_PUBLIC_BASE_URL` | Your application's base URL (e.g., `http://127.0.0.1:3000` for local dev, or `https://your-domain.com` for production) |
+| `ATPROTO_JWK_PRIVATE` | Private JWK for OAuth authentication (generated using `pnpm run generate-jwk`) |
+| `REDIS_HOST` | Redis server hostname |
+| `REDIS_PORT` | Redis server port |
 | `REDIS_PASSWORD` | Redis password |
 | `NEXT_PUBLIC_PDS_URL` | Personal Data Server URL |
 | `NEXT_PUBLIC_SDS_URL` | Shared Data Server URL |
+
+### Local Development
+
+For local development, you **must** use `127.0.0.1` instead of `localhost`:
+
+```env
+NEXT_PUBLIC_BASE_URL=http://127.0.0.1:3000
+```
+
+This is required for [RFC 8252](https://datatracker.ietf.org/doc/html/rfc8252#section-7.3) compliance. The application includes automatic redirect handling - if you access `http://localhost:3000`, you'll be redirected to `http://127.0.0.1:3000`.
 
 ### Test Server URLs
 
@@ -50,9 +63,17 @@ NEXT_PUBLIC_PDS_URL=https://pds-eu-west4.test.certified.app
 NEXT_PUBLIC_SDS_URL=https://sds-eu-west4.test.certified.app
 ```
 
-Currently  the loopback client URL does not work so ngrok is required for development purposes.
+### Testing with ngrok
 
-Once you have the URL from ngrok replace `NEXT_PUBLIC_APP_URL` with ngrok url
+If you need to test with external services (webhooks, mobile apps, etc.), use ngrok:
+
+```bash
+# Start ngrok
+ngrok http 3000
+
+# Update .env.local with your ngrok URL
+NEXT_PUBLIC_BASE_URL=https://abc123.ngrok.io
+```
 
 ### Generating the JWK Private Key
 
@@ -106,6 +127,32 @@ The script outputs the complete environment variable line. You can either copy i
 - **SDS (Shared Data Server)**: Stores organization data - collaborative repositories where multiple users can contribute
 
 The SDK automatically routes requests to the correct server based on the target DID. Since a user can be part of multiple organizations we also have a switch profile button to switch between different organizations.
+
+## Localhost Redirect
+
+This application automatically redirects requests from `localhost` to `127.0.0.1` to ensure RFC 8252 compliance for OAuth loopback clients.
+
+### Why?
+
+[RFC 8252 Section 7.3](https://datatracker.ietf.org/doc/html/rfc8252#section-7.3) requires OAuth loopback clients to use IP addresses (`127.0.0.1`) instead of hostnames (`localhost`) for security reasons:
+
+- **Prevents DNS rebinding attacks**: Using an IP address ensures the redirect stays on the local machine
+- **Consistent OAuth behavior**: ATProto PDSs expect IP-based loopback addresses
+- **Browser security**: Some browsers handle `localhost` and `127.0.0.1` differently for security features
+
+### How It Works
+
+The application includes a Next.js proxy (`proxy.ts`) that:
+1. Detects requests to `localhost:*` (any port)
+2. Automatically redirects to `127.0.0.1:*` (preserving port, path, and query params)
+3. Uses HTTP 307 (Temporary Redirect) to preserve the request method
+
+**Examples:**
+- `http://localhost:3000` → `http://127.0.0.1:3000`
+- `http://localhost:3000/login` → `http://127.0.0.1:3000/login`
+- `http://localhost:3000/api/auth/callback?code=123` → `http://127.0.0.1:3000/api/auth/callback?code=123`
+
+This is completely transparent to users - just access the app however you prefer, and the redirect will handle the rest!
 
 ## Authentication
 

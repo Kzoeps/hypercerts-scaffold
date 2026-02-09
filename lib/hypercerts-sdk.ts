@@ -1,18 +1,13 @@
-import { ATPROTO_SCOPE, createATProtoSDK, TRANSITION_SCOPES } from "@hypercerts-org/sdk-core";
+import { createATProtoSDK } from "@hypercerts-org/sdk-core";
+import { config, OAUTH_SCOPE } from "./config";
 import { RedisSessionStore, RedisStateStore } from "./redis-state-store";
-
-if (
-  !process.env.ATPROTO_JWK_PRIVATE ||
-  !process.env.NEXT_PUBLIC_APP_URL ||
-  !process.env.NEXT_PUBLIC_REDIRECT_BASE_URL ||
-  !process.env.NEXT_PUBLIC_SDS_URL
-) {
-  throw new Error("Required environment variables missing: ATPROTO_JWK_PRIVATE, NEXT_PUBLIC_APP_URL, NEXT_PUBLIC_REDIRECT_BASE_URL, NEXT_PUBLIC_SDS_URL");
-}
 
 export const sessionStore = new RedisSessionStore();
 export const stateStore = new RedisStateStore();
 
+export { OAUTH_SCOPE };
+
+// Future granular scopes (not yet used)
 export const HYPERCERT_REPO_SCOPE =
   "repo?collection=org.hypercerts.claim.activity&collection=org.hypercerts.claim.contribution&collection=org.hypercerts.claim.evaluation&collection=org.hypercerts.claim.evidence&collection=org.hypercerts.claim.measurement&collection=org.hypercerts.claim.collection&collection=org.hypercerts.claim.rights&collection=org.hypercerts.claim.funding&collection=app.certified.location&action=create&action=update&action=delete";
 
@@ -20,35 +15,28 @@ export const RPC_SCOPE = [
   "rpc:app.bsky.actor.getProfile?aud=did:web:api.bsky.app%23bsky_appview",
 ].join(" ");
 
-export const BLOB_SCOPE = "blob?accept=video/*&accept=image/*"
+export const BLOB_SCOPE = "blob?accept=video/*&accept=image/*";
 
-// export const OAUTH_SCOPE = [ATPROTO_SCOPE, RPC_SCOPE, HYPERCERT_REPO_SCOPE, BLOB_SCOPE].join(" ");
+// OAuth configuration using centralized config
+const oauthConfig = {
+  clientId: config.clientId,
+  redirectUri: config.redirectUri,
+  scope: config.scope,
+  jwksUri: config.jwksUri,
+  jwkPrivate: config.jwkPrivate,
+  developmentMode: config.isDevelopment,
+};
 
-// for now we use trnastion:generic. but slowly move towards scopes listed above.
-export const OAUTH_SCOPE = [ATPROTO_SCOPE, TRANSITION_SCOPES.GENERIC].join(" ")
-
-
+// Create ATProto SDK instance
 const sdk = createATProtoSDK({
-  oauth: {
-    // For loopback: clientId is http://localhost (no port, no /client-metadata.json)
-    // For production: clientId should be the public URL + /client-metadata.json
-    clientId: process.env.NEXT_PUBLIC_APP_URL.startsWith('http://localhost')
-      ? process.env.NEXT_PUBLIC_APP_URL
-      : `${process.env.NEXT_PUBLIC_APP_URL}/client-metadata.json`,
-    // Redirect URI uses the IP-based URL (127.0.0.1 for loopback per RFC 8252)
-    redirectUri: `${process.env.NEXT_PUBLIC_REDIRECT_BASE_URL}/api/auth/callback`,
-    scope: OAUTH_SCOPE,
-    // jwksUri uses the IP-based URL for loopback
-    jwksUri: `${process.env.NEXT_PUBLIC_REDIRECT_BASE_URL}/jwks.json`,
-    jwkPrivate: process.env.ATPROTO_JWK_PRIVATE,
-  },
+  oauth: oauthConfig,
   storage: {
     sessionStore,
     stateStore,
   },
-  handleResolver: process.env.NEXT_PUBLIC_PDS_URL,
+  handleResolver: config.pdsUrl,
   servers: {
-    sds: process.env.NEXT_PUBLIC_SDS_URL,
+    sds: config.sdsUrl,
   },
   logger: console,
 });

@@ -15,18 +15,14 @@ async function generateJWK() {
   console.error('🔐 Generating JWK private key for ATProto OAuth...\n');
 
   try {
-    // Generate ES256 key pair
     const { privateKey } = await generateKeyPair('ES256');
     const jwk = await exportJWK(privateKey);
 
-    // Add required properties
     jwk.kid = randomUUID();
     jwk.alg = 'ES256';
-    jwk.key_ops = ['sign'];
     // Remove 'use' property - it's deprecated in favor of 'key_ops'
     delete jwk.use;
 
-    // Format as JWK Set
     const jwkSet = { keys: [jwk] };
     const jwkString = JSON.stringify(jwkSet);
 
