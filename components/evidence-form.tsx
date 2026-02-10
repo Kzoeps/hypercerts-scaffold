@@ -512,6 +512,7 @@ export default function HypercertEvidenceForm({
                 onFileChange={handleLocationFileChange}
                 urlHelpText="Link to a resource encoding the location (e.g., GeoJSON, coordinates)."
                 fileHelpText="Upload a file containing location data."
+                accept=".geojson,application/geo+json,application/json"
               />
             </div>
           )}

@@ -18,6 +18,7 @@ export default function LinkFileSelector({
   urlHelpText,
   fileHelpText,
   fileUploadDisabled = true,
+  accept,
 }: {
   label: string;
   mode: Mode;
@@ -29,6 +30,7 @@ export default function LinkFileSelector({
   urlHelpText: string;
   fileHelpText: string;
   fileUploadDisabled?: boolean;
+  accept?: string;
 }) {
   return (
     <div className="space-y-3">
@@ -66,7 +68,7 @@ export default function LinkFileSelector({
         </div>
       ) : (
         <div className="space-y-2">
-          <Input type="file" onChange={onFileChange} required={required} />
+          <Input type="file" onChange={onFileChange} required={required} accept={accept} />
           <p className="text-xs text-muted-foreground">{fileHelpText}</p>
         </div>
       )}

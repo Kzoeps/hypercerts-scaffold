@@ -16,6 +16,7 @@ export async function GET() {
     client_uri: config.baseUrl,
     redirect_uris: [config.redirectUri],
     scope: OAUTH_SCOPE,
+    logo_uri:`${config.baseUrl}/favicon.ico`,
     grant_types: ["authorization_code", "refresh_token"],
     response_types: ["code"],
     token_endpoint_auth_method: "none",

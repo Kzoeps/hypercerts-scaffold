@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/popover";
 import { AtSignIcon, LogOut, User, GlobeIcon, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FormEventHandler, useState } from "react";
 import ProfileSwitchDialog from "./profile-switch-dialog";
 
@@ -48,6 +49,7 @@ export default function Navbar({
 }: NavbarProps) {
   const [handle, setHandle] = useState("");
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   const loginMutation = useLoginMutation();
   const logoutMutation = useLogoutMutation();
@@ -91,19 +93,31 @@ export default function Navbar({
               <div className="hidden md:flex items-center gap-1">
                 <Link
                   href="/hypercerts"
-                  className="px-3 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+                  className={`px-3 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium rounded-lg transition-colors ${
+                    pathname === "/hypercerts" || (pathname?.startsWith("/hypercerts") && pathname !== "/hypercerts/create")
+                      ? "bg-create-accent/10 text-create-accent hover:bg-create-accent/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
                 >
                   Hypercerts
                 </Link>
                 <Link
                   href="/organizations"
-                  className="px-3 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+                  className={`px-3 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium rounded-lg transition-colors ${
+                    pathname?.startsWith("/organizations")
+                      ? "bg-create-accent/10 text-create-accent hover:bg-create-accent/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
                 >
                   Organizations
                 </Link>
                 <Link
                   href="/hypercerts/create"
-                  className="px-3 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium bg-create-accent/10 text-create-accent hover:bg-create-accent/20 rounded-lg transition-colors"
+                  className={`px-3 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium rounded-lg transition-colors ${
+                    pathname === "/hypercerts/create"
+                      ? "bg-create-accent/10 text-create-accent hover:bg-create-accent/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
                 >
                   Create
                 </Link>

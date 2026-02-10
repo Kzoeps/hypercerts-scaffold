@@ -35,7 +35,7 @@ export async function getEvidenceLinks(
 ): Promise<BacklinksResponse["records"]> {
   return getBacklinks(
     hypercertUri,
-    "org.hypercerts.claim.evidence:subject.uri"
+    "org.hypercerts.claim.evidence:hypercert.uri"
   );
 }
 
@@ -59,6 +59,6 @@ export async function getMeasurementLinks(
 ): Promise<BacklinksResponse["records"]> {
   return getBacklinks(
     hypercertUri,
-    "org.hypercerts.claim.measurement:hypercertUri"
+    "org.hypercerts.claim.measurement:hypercert.uri"
   );
 }

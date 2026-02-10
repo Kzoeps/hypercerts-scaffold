@@ -246,6 +246,7 @@ export default function HypercertLocationForm({
           required
           urlHelpText="Link to a resource encoding the location (e.g., GeoJSON point, CSV with coordinates)."
           fileHelpText="Upload a file that contains location data. It will be stored as a blob."
+          accept=".geojson,application/geo+json,application/json"
         />
 
         <FormFooter
