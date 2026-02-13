@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import sdk from "@/lib/hypercerts-sdk";
 import type { Repository } from "@hypercerts-org/sdk-core";
 
-export type RepoServer = "pds" | "sds";
+export type RepoServer = "pds";
 
 export interface RepoContextOptions {
   /**
@@ -13,14 +13,6 @@ export interface RepoContextOptions {
    * Defaults to activeDid (cookie "active-did") falling back to userDid.
    */
   targetDid?: string;
-
-  /**
-   * Escape hatch when you *know* the server must be PDS or SDS.
-   * If omitted, we use the scaffold rule:
-   *   targetDid === userDid -> PDS
-   *   else -> SDS
-   */
-  serverOverride?: RepoServer;
 }
 
 export interface RepoContext {
@@ -57,8 +49,7 @@ export const getRepoContext = cache(async function getRepoContext(
   const activeDid = cookieStore.get("active-did")?.value || userDid;
   const targetDid = options.targetDid || activeDid;
 
-  const server: RepoServer =
-    options.serverOverride ?? (targetDid === userDid ? "pds" : "sds");
+  const server: RepoServer = "pds";
 
   try {
     const session = await sdk.restoreSession(userDid);

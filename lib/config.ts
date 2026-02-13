@@ -191,7 +191,6 @@ export const config = {
   
   // Network endpoints
   pdsUrl: process.env.NEXT_PUBLIC_PDS_URL!,
-  sdsUrl: process.env.NEXT_PUBLIC_SDS_URL!,
   
   // Redis configuration
   redis: {
@@ -207,7 +206,6 @@ export const config = {
 // Validate required environment variables
 const requiredEnvVars = [
   "NEXT_PUBLIC_PDS_URL",
-  "NEXT_PUBLIC_SDS_URL",
   "ATPROTO_JWK_PRIVATE",
   "REDIS_HOST",
   "REDIS_PORT",
@@ -232,6 +230,5 @@ if (typeof window === "undefined") {
   console.log(`   Client ID: ${clientId}`);
   console.log(`   Redirect URI: ${redirectUri}`);
   console.log(`   JWKS URI: ${jwksUri}`);
-  console.log(`   PDS: ${config.pdsUrl}`);
-  console.log(`   SDS: ${config.sdsUrl}\n`);
+  console.log(`   PDS: ${config.pdsUrl}\n`);
 }

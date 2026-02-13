@@ -18,24 +18,13 @@ export const getActiveProfileInfo = async () => {
   const ctx = await getRepoContext();
   if (!ctx) return null;
 
-  if (ctx.server === "pds") {
-    const profile = await ctx.scopedRepo.profile.getCertifiedProfile().catch(() => null);
-    if (!profile) return null;
-    return {
-      name: profile.displayName || profile.handle,
-      handle: profile.handle,
-      isOrganization: false,
-    };
-  } else {
-    const org = await ctx.repository.organizations.get(ctx.targetDid);
-    if (!org) return null;
-    return {
-      did: org.did,
-      name: org.name,
-      handle: org.handle,
-      isOrganization: true,
-    };
-  }
+  const profile = await ctx.scopedRepo.profile.getCertifiedProfile().catch(() => null);
+  if (!profile) return null;
+  return {
+    name: profile.displayName || profile.handle,
+    handle: profile.handle,
+    isOrganization: false,
+  };
 };
 export const switchActiveProfile = async (did: string) => {
   const session = await getSession();
@@ -196,59 +185,3 @@ export const getEvidenceRecord = async (params: {
   return JSON.parse(JSON.stringify(data));
 };
 
-export const createOrganization = async (params: {
-  handlePrefix: string;
-  description: string;
-  name: string;
-}) => {
-  const ctx = await getRepoContext({ serverOverride: "sds" });
-  if (!ctx) {
-    throw new Error("Unable to get repository context");
-  }
-  const org = await ctx.repository.organizations.create(params);
-  return org;
-};
-
-export const addCollaboratorToOrganization = async (
-  params: GrantAccessParams,
-) => {
-  const ctx = await getRepoContext({
-    serverOverride: "sds",
-    targetDid: params.repoDid,
-  });
-  if (!ctx) {
-    throw new Error("Unable to get repository context");
-  }
-  const result = await ctx.scopedRepo.collaborators.grant(params);
-  after(() => {
-    revalidatePath(`/organizations/${encodeURIComponent(params.repoDid)}`);
-  });
-  return result;
-};
-
-export const removeCollaborator = async (params: {
-  userDid: string;
-  repoDid: string;
-}) => {
-  const ctx = await getRepoContext({
-    serverOverride: "sds",
-    targetDid: params.repoDid,
-  });
-  if (!ctx) {
-    throw new Error("Unable to get repository context");
-  }
-  const result = await ctx.scopedRepo.collaborators.revoke(params);
-  after(() => {
-    revalidatePath(`/organizations/[orgDid]`, "page");
-  });
-  return result;
-};
-
-export const listOrgs = async () => {
-  const ctx = await getRepoContext({ serverOverride: "sds" });
-  if (!ctx) {
-    throw new Error("Unable to get repository context");
-  }
-  const orgs = await ctx.repository.organizations.list({ limit: 100 });
-  return orgs;
-};

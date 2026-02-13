@@ -4,9 +4,7 @@ import { cookies } from "next/headers";
 import sdk from "@/lib/hypercerts-sdk";
 import type { Repository } from "@hypercerts-org/sdk-core";
 
-export const getAuthenticatedRepo = cache(async function getAuthenticatedRepo(
-  serverOverride?: "pds" | "sds"
-): Promise<Repository | null> {
+export const getAuthenticatedRepo = cache(async function getAuthenticatedRepo(): Promise<Repository | null> {
   const cookieStore = await cookies();
   const userDid = cookieStore.get("user-did")?.value;
 
@@ -14,21 +12,10 @@ export const getAuthenticatedRepo = cache(async function getAuthenticatedRepo(
     return null;
   }
 
-  const activeDid = cookieStore.get("active-did")?.value || userDid;
-
-  let determinedServer: "pds" | "sds";
-  if (serverOverride) {
-    determinedServer = serverOverride;
-  } else if (activeDid !== userDid) {
-    determinedServer = "sds"; // If active DID is an organization, default to SDS
-  } else {
-    determinedServer = "pds"; // If active DID is the user's, default to PDS
-  }
-
   try {
     const session = await sdk.restoreSession(userDid);
     if (!session) return null;
-    return await sdk.repository(session, { server: determinedServer });
+    return await sdk.repository(session, { server: "pds" });
   } catch (error) {
     console.error(`Failed to restore session for DID ${userDid}:`, error);
     return null;

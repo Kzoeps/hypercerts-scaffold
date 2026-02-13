@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const [personalRepo, session] = await Promise.all([
-    getAuthenticatedRepo("pds"),
+    getAuthenticatedRepo(),
     getSession(),
   ]);
   
@@ -193,11 +193,6 @@ export default async function Home() {
               <Button asChild variant="outline" className="font-[family-name:var(--font-outfit)] font-medium">
                 <Link href="/hypercerts">
                   View My Hypercerts
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="font-[family-name:var(--font-outfit)] font-medium">
-                <Link href="/organizations">
-                  Organizations
                 </Link>
               </Button>
             </div>

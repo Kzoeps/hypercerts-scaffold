@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const repo = await getAuthenticatedRepo("pds");
+  const repo = await getAuthenticatedRepo();
   if (!repo) redirect("/");
   const profile = await repo.profile.getCertifiedProfile();
 

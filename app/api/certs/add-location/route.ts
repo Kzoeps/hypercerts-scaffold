@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const personalRepository = await getAuthenticatedRepo("pds");
+    const personalRepository = await getAuthenticatedRepo();
     if (!personalRepository) {
       return NextResponse.json(
         { error: "Could not authenticate repo" },

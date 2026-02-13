@@ -37,17 +37,6 @@ export const queryKeys = {
       [...queryKeys.hypercerts.all, "measurement-record", did, rkey] as const,
   },
 
-  // Organizations
-  organizations: {
-    all: ["organizations"] as const,
-    list: () => [...queryKeys.organizations.all, "list"] as const,
-    detail: (did: string) => [...queryKeys.organizations.all, did] as const,
-    checkHandle: (handle: string) =>
-      [...queryKeys.organizations.all, "check-handle", handle] as const,
-    forProfileSwitch: () =>
-      [...queryKeys.organizations.all, "profile-switch"] as const,
-  },
-
   // External APIs
   external: {
     bluesky: {
