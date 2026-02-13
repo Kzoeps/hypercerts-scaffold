@@ -4,10 +4,14 @@ A Next.js scaffold for building applications on ATProto using the Hypercerts SDK
 
 ## Prerequisites
 
-- Node.js 20+
-- Redis instance (for session & state storage), e.g.
-  `docker run -d -p 6379:6379 redis:alpine`
-- A PDS account for testing
+- **Node.js 20+** (we recommend [nvm](https://github.com/nvm-sh/nvm) for version management)
+- **pnpm** package manager (`npm install -g pnpm`)
+- **Redis** for session & state storage:
+  - **Local development:** `docker run -d -p 6379:6379 redis:alpine`
+  - **Cloud Redis:** Upstash, Redis Labs, Railway, etc. (see [Environment Configuration](#environment-configuration))
+- **A PDS account** for testing (e.g., on https://pds-eu-west4.test.certified.app)
+
+> **Note:** This project uses an unreleased, packed SDK version. See [DEVELOPMENT.md](./DEVELOPMENT.md) for details and important warnings.
 
 ## Quick Start
 
@@ -16,11 +20,14 @@ A Next.js scaffold for building applications on ATProto using the Hypercerts SDK
 git clone <repository-url>
 cd hypercerts-scaffold
 
-# Install dependencies
+# Install dependencies (we use pnpm for this project)
 pnpm install
 
 # Copy environment file and configure
 cp .env.example .env.local
+
+# Make sure Redis is running (if using Docker)
+docker ps  # should show a Redis container running
 
 # Run the development server
 pnpm run dev
