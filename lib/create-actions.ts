@@ -18,24 +18,13 @@ export const getActiveProfileInfo = async () => {
   const ctx = await getRepoContext();
   if (!ctx) return null;
 
-  if (ctx.server === "pds") {
-    const profile = await ctx.scopedRepo.profile.getCertifiedProfile().catch(() => null);
-    if (!profile) return null;
-    return {
-      name: profile.displayName || profile.handle,
-      handle: profile.handle,
-      isOrganization: false,
-    };
-  } else {
-    const org = await ctx.repository.organizations.get(ctx.targetDid);
-    if (!org) return null;
-    return {
-      did: org.did,
-      name: org.name,
-      handle: org.handle,
-      isOrganization: true,
-    };
-  }
+  const profile = await ctx.scopedRepo.profile.getCertifiedProfile().catch(() => null);
+  if (!profile) return null;
+  return {
+    name: profile.displayName || profile.handle,
+    handle: profile.handle,
+    isOrganization: false,
+  };
 };
 export const switchActiveProfile = async (did: string) => {
   const session = await getSession();
