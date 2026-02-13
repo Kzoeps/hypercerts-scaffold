@@ -13,12 +13,6 @@ export interface RepoContextOptions {
    * Defaults to activeDid (cookie "active-did") falling back to userDid.
    */
   targetDid?: string;
-
-  /**
-   * Server override (always PDS now).
-   * Kept for backwards compatibility.
-   */
-  serverOverride?: RepoServer;
 }
 
 export interface RepoContext {
@@ -55,7 +49,7 @@ export const getRepoContext = cache(async function getRepoContext(
   const activeDid = cookieStore.get("active-did")?.value || userDid;
   const targetDid = options.targetDid || activeDid;
 
-  const server: RepoServer = options.serverOverride ?? "pds";
+  const server: RepoServer = "pds";
 
   try {
     const session = await sdk.restoreSession(userDid);
