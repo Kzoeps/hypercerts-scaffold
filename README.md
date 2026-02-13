@@ -290,7 +290,18 @@ export async function GET() {
 
 ## Learn More
 
+### Scaffold Documentation
+
+- [DEVELOPMENT.md](./DEVELOPMENT.md) - Development guide, SDK version details, contributing guidelines
+
+### External Documentation
+
 - [ATProto Documentation](https://atproto.com/docs)
 - [Hypercerts Documentation](https://hypercerts.org/docs)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Hypercerts SDK](https://github.com/hypercerts-org/hypercerts-sdk)
+
+### This Project
+
+- [Report Issues](https://github.com/hypercerts-org/hypercerts-scaffold-atproto/issues)
+- Maintainer: [@kzoeps](https://github.com/kzoeps)
