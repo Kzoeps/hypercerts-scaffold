@@ -35,9 +35,6 @@ const sdk = createATProtoSDK({
     stateStore,
   },
   handleResolver: config.pdsUrl,
-  servers: {
-    sds: config.sdsUrl,
-  },
   logger: console,
 });
 
