@@ -30,6 +30,20 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000) to see the application.
 
 > **Note**: If you access `http://localhost:3000`, you'll be automatically redirected to `http://127.0.0.1:3000`. This ensures RFC 8252 compliance for OAuth loopback clients, which requires using IP addresses instead of hostnames for security. See the [Localhost Redirect](#localhost-redirect) section for details.
 
+## ⚠️ Important: SDK Version & Breaking Changes
+
+This scaffold uses an **unreleased, pre-packaged version** of `@hypercerts-org/sdk-core`:
+
+- **Version:** `0.10.0-beta.8` (from `vendor/hypercerts-org-sdk-core-0.10.0-beta.8.tgz`)
+- **Source:** Built directly from the [Hypercerts SDK repository](https://github.com/hypercerts-org/hypercerts-sdk) (not from npm)
+- **Why:** This allows us to dogfood the latest SDK features before official npm release
+- **⚠️ Contains unreleased changes:** Some features may not be merged or may change before the next npm release
+- **⚠️ Breaking changes expected:** As the SDK evolves toward 1.0, expect API changes
+
+**Installing the latest SDK version may break this scaffold.** See [DEVELOPMENT.md](./DEVELOPMENT.md) for details on working with the packed SDK, update instructions, and important warnings.
+
+**Issues & Support:** Found a bug or have questions? [Create an issue](https://github.com/hypercerts-org/hypercerts-scaffold-atproto/issues) and [@kzoeps](https://github.com/kzoeps) will respond!
+
 ## Environment Configuration
 
 ### Required Variables
