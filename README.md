@@ -110,21 +110,18 @@ The script outputs the complete environment variable line. You can either copy i
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Hypercerts SDK (sdk-core)                    │
 │       OAuth Client  │  Session Management  │  Repository Ops     │
-└───────────┬─────────────────────┬───────────────────┬───────────┘
-            │                     │                   │
-            ▼                     ▼                   ▼
-     ┌───────────┐         ┌───────────┐       ┌───────────┐
-     │   Redis   │         │    PDS    │       │    SDS    │
-     │ (sessions)│         │ (personal)│       │  (shared) │
-     └───────────┘         └───────────┘       └───────────┘
+└───────────┬─────────────────────┬───────────────────┘
+            │                     │
+            ▼                     ▼
+     ┌───────────┐         ┌───────────┐
+     │   Redis   │         │    PDS    │
+     │ (sessions)│         │ (personal)│
+     └───────────┘         └───────────┘
 ```
 
-### PDS vs SDS
+### Personal Data Server (PDS)
 
-- **PDS (Personal Data Server)**: Stores personal user data - your profile, your personal hypercerts
-- **SDS (Shared Data Server)**: Stores organization data - collaborative repositories where multiple users can contribute
-
-The SDK automatically routes requests to the correct server based on the target DID. Since a user can be part of multiple organizations we also have a switch profile button to switch between different organizations.
+The **PDS (Personal Data Server)** stores all user data - your profile and your hypercerts. All operations in this application interact with your personal PDS.
 
 ## Localhost Redirect
 
