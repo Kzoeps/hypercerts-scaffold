@@ -21,27 +21,14 @@ export async function SignedInProvider({
   let activeProfileHandle: string | undefined = undefined;
 
   if (session) {
-    const [repo, orgRepo] = await Promise.all([
-      getAuthenticatedRepo("pds"),
-      activeDid && activeDid !== session.did
-        ? getAuthenticatedRepo("sds")
-        : Promise.resolve(null),
-    ]);
+    const repo = await getAuthenticatedRepo();
 
-    const [profile, org] = await Promise.all([
-      repo ? repo.profile.getCertifiedProfile().catch(() => null) : Promise.resolve(null),
-      orgRepo && activeDid && activeDid !== session.did
-        ? orgRepo.organizations.get(activeDid)
-        : Promise.resolve(null),
-    ]);
+    const profile = repo
+      ? await repo.profile.getCertifiedProfile().catch(() => null)
+      : null;
 
     avatarUrl = profile?.avatar;
     handle = profile?.handle || "";
-
-    if (org) {
-      activeProfileName = org.name;
-      activeProfileHandle = org.handle;
-    }
   }
 
   return (

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const [personalRepo, session] = await Promise.all([
-    getAuthenticatedRepo("pds"),
+    getAuthenticatedRepo(),
     getSession(),
   ]);
   

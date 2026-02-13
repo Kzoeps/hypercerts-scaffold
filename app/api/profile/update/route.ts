@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 export async function POST(req: Request) {
   try {
-    const repo = await getAuthenticatedRepo("pds");
+    const repo = await getAuthenticatedRepo();
     if (!repo) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
