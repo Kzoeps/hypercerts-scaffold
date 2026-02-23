@@ -8,6 +8,7 @@ import HypercertMeasurementsSection from "./hypercert-measurements-section";
 import type { HypercertClaim } from "@hypercerts-org/sdk-core";
 import HypercertEvaluationsSection from "./hypercert-evaluations-section";
 import HypercertEvidenceSection from "./hypercert-evidence-section";
+import HypercertContributorsSection from "./hypercert-contributors-section";
 import { Calendar, Clock, Link as LinkIcon, Award } from "lucide-react";
 import Image from "next/image";
 
@@ -21,6 +22,7 @@ export default function HypercertDetailsView({
   imageUri?: string;
 }) {
   const workScope = Array.isArray(record.workScope) ? record.workScope : [];
+  const contributors = (record as any).contributors;
   
   return (
     <div className="space-y-6">
@@ -133,9 +135,14 @@ export default function HypercertDetailsView({
         </div>
       </div>
 
+      {/* Contributors Section */}
+      <div className="animate-fade-in-up [animation-delay:150ms]">
+        <HypercertContributorsSection contributors={contributors} />
+      </div>
+
       {/* Full Description */}
       {record.description && (
-        <div className="animate-fade-in-up [animation-delay:200ms]">
+        <div className="animate-fade-in-up [animation-delay:250ms]">
           <div className="glass-panel rounded-xl p-6 border border-border/50 space-y-3">
             <h2 className="text-lg font-[family-name:var(--font-syne)] font-semibold">
               Description
@@ -148,7 +155,7 @@ export default function HypercertDetailsView({
       )}
 
       {/* Sections */}
-      <div className="animate-fade-in-up [animation-delay:300ms] space-y-6">
+      <div className="animate-fade-in-up [animation-delay:350ms] space-y-6">
         <HypercertMeasurementsSection hypercertUri={hypercertUri} />
         <HypercertEvidenceSection hypercertUri={hypercertUri} />
         <HypercertEvaluationsSection hypercertUri={hypercertUri} />
