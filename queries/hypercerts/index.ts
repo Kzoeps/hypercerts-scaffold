@@ -13,3 +13,4 @@ export {
   useMeasurementLinksQuery,
   useMeasurementRecordsQuery,
 } from "./use-measurements-query";
+export { useContributorProfilesQuery } from "./use-contributor-profiles-query";

@@ -35,6 +35,8 @@ export const queryKeys = {
       [...queryKeys.hypercerts.all, uri, "measurements"] as const,
     measurementRecord: (did: string, rkey: string) =>
       [...queryKeys.hypercerts.all, "measurement-record", did, rkey] as const,
+    contributorProfile: (did: string) =>
+      [...queryKeys.hypercerts.all, "contributor-profile", did] as const,
   },
 
   // External APIs
