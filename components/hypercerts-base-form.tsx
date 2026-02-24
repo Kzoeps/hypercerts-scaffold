@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { OrgHypercertsClaimActivity as Hypercert } from "@hypercerts-org/sdk-core";
 import type { CreateHypercertParams } from "@hypercerts-org/sdk-core";
+import type { OrgHypercertsClaimActivity as HypercertRecord } from "@hypercerts-org/sdk-core";
 import { Label } from "@radix-ui/react-label";
 import {
   PlusIcon,
@@ -35,7 +36,7 @@ export interface HypercertsBaseFormProps {
   saveDisabled: boolean;
   onSave?: (record: CreateHypercertParams, advance?: boolean) => void;
   updateActions?: boolean;
-  certInfo?: HypercertRecord;
+  certInfo?: HypercertRecord.Record;
   hypercertUri?: string;
   nextStepper: () => void;
 }
