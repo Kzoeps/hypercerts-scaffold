@@ -37,8 +37,6 @@ export default function Navbar({
   isSignedIn,
   avatarUrl,
   handle: userHandle,
-  userDid,
-  activeDid,
   activeProfileName,
   activeProfileHandle,
 }: NavbarProps) {
@@ -76,7 +74,9 @@ export default function Navbar({
                 <Link
                   href="/hypercerts"
                   className={`px-3 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium rounded-lg transition-colors ${
-                    pathname === "/hypercerts" || (pathname?.startsWith("/hypercerts") && pathname !== "/hypercerts/create")
+                    pathname === "/hypercerts" ||
+                    (pathname?.startsWith("/hypercerts") &&
+                      pathname !== "/hypercerts/create")
                       ? "bg-create-accent/10 text-create-accent hover:bg-create-accent/20"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
@@ -111,17 +111,22 @@ export default function Navbar({
                   </button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-56 glass-panel border-border/60">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 glass-panel border-border/60"
+                >
                   <DropdownMenuLabel className="flex flex-col gap-1">
-                    <span className="text-sm font-[family-name:var(--font-outfit)] font-semibold">My Account</span>
-                    {userHandle && (
+                    <span className="text-sm font-[family-name:var(--font-outfit)] font-semibold">
+                      My Account
+                    </span>
+                    {userHandle ? (
                       <span className="text-xs font-[family-name:var(--font-outfit)] text-muted-foreground">
                         @{userHandle}
                       </span>
-                    )}
+                    ) : null}
                   </DropdownMenuLabel>
-                  
-                  {activeProfileName && (
+
+                  {activeProfileName ? (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel className="flex flex-col gap-1">
@@ -131,19 +136,22 @@ export default function Navbar({
                         <span className="text-sm font-[family-name:var(--font-outfit)] font-semibold">
                           {activeProfileName}
                         </span>
-                        {activeProfileHandle && (
+                        {activeProfileHandle ? (
                           <span className="text-xs font-[family-name:var(--font-outfit)] text-muted-foreground">
                             @{activeProfileHandle}
                           </span>
-                        )}
+                        ) : null}
                       </DropdownMenuLabel>
                     </>
-                  )}
+                  ) : null}
 
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem className="font-[family-name:var(--font-outfit)]">
-                    <Link className="flex items-center gap-2 w-full" href="/profile">
+                    <Link
+                      className="flex items-center gap-2 w-full"
+                      href="/profile"
+                    >
                       <User className="h-4 w-4" />
                       Profile
                     </Link>

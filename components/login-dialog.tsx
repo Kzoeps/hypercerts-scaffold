@@ -82,7 +82,7 @@ function HandleForm() {
         />
       </InputGroup>
 
-      <div className="space-y-2">
+      <div className="animate-fade-in-up [animation-delay:200ms] space-y-3">
         <Button
           type="submit"
           disabled={loginMutation.isPending}
