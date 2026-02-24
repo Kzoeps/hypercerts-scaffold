@@ -6,9 +6,22 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
 
+  const error = searchParams.get("error");
+  if (error) {
+    const description =
+      searchParams.get("error_description") || "Authorization was cancelled";
+    console.warn("OAuth authorization error:", error, description);
+    const redirectUrl = new URL("/", config.baseUrl);
+    redirectUrl.searchParams.set("auth_error", error);
+    redirectUrl.searchParams.set("auth_error_description", description);
+    return NextResponse.redirect(redirectUrl);
+  }
+
   try {
-    const session = await sdk.callback(searchParams);
-    const cookieStore = await cookies();
+    const [session, cookieStore] = await Promise.all([
+      sdk.callback(searchParams),
+      cookies(),
+    ]);
     cookieStore.set("user-did", session.did, {
       httpOnly: true,
       secure: config.isProduction,
@@ -25,12 +38,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(redirectPath, config.baseUrl));
   } catch (e) {
     console.error("Authentication failed:", e);
-    return NextResponse.json(
-      {
-        error: "Authentication failed",
-        details: e instanceof Error ? e.message : String(e),
-      },
-      { status: 500 },
+    const redirectUrl = new URL("/", config.baseUrl);
+    redirectUrl.searchParams.set("auth_error", "callback_failed");
+    redirectUrl.searchParams.set(
+      "auth_error_description",
+      "Authentication failed. Please try again.",
     );
+    return NextResponse.redirect(redirectUrl);
   }
 }

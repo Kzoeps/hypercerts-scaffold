@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedRepo } from "@/lib/atproto-session";
 import { revalidatePath } from "next/cache";
+import { convertBlobUrlToCdn } from "@/lib/utils";
 
 export async function POST(req: Request) {
   try {
-    const repo = await getAuthenticatedRepo();
+    const repoPromise = getAuthenticatedRepo();
+    const formData = await req.formData();
+    const repo = await repoPromise;
     if (!repo) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
-
-    const formData = await req.formData();
 
     const displayName = formData.get("displayName")?.toString() || "";
     const description = formData.get("description")?.toString() || "";
@@ -20,13 +21,13 @@ export async function POST(req: Request) {
     if (avatar && avatar.size > 1_000_000) {
       return NextResponse.json(
         { error: "Avatar must be less than 1MB" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (banner && banner.size > 1_000_000) {
       return NextResponse.json(
         { error: "Banner must be less than 1MB" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     let existingProfile;
     try {
       existingProfile = await repo.profile.getBskyProfile();
-    } catch (error) {
+    } catch {
       // Profile doesn't exist yet
       existingProfile = null;
     }
@@ -82,9 +83,9 @@ export async function POST(req: Request) {
 
     const updated = await repo.profile.getBskyProfile();
 
-    // Avatar and banner are already converted to blob URLs by getBskyProfile()
-    const avatarUrl = updated.avatar || "";
-    const bannerUrl = updated.banner || "";
+    // Convert blob URLs to CDN URLs so Next.js remotePatterns allow them
+    const avatarUrl = convertBlobUrlToCdn(updated.avatar) || "";
+    const bannerUrl = convertBlobUrlToCdn(updated.banner) || "";
 
     return NextResponse.json({
       ok: true,
@@ -98,8 +99,8 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Bsky profile update error:", error);
     return NextResponse.json(
-      { error: "Failed to update Bsky profile" },
-      { status: 500 }
+      { error: `Profile update failed: ${(error as Error).message}` },
+      { status: 500 },
     );
   }
 }
