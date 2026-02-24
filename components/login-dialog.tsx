@@ -1,5 +1,5 @@
 "use client";
-import { AtSignIcon, MailIcon } from "lucide-react";
+import { AtSignIcon } from "lucide-react";
 
 import {
   InputGroup,
@@ -13,7 +13,6 @@ import { useLoginMutation } from "@/queries/auth";
 
 export default function LoginDialog() {
   const [handle, setHandle] = useState("");
-  const [email, setEmail] = useState("");
   const loginMutation = useLoginMutation();
 
   const pdsUrl = process.env.NEXT_PUBLIC_PDS_URL;
@@ -90,22 +89,10 @@ export default function LoginDialog() {
       <div className="text-center text-sm text-muted-foreground my-4">or</div>
 
       <div className="animate-fade-in-up space-y-3">
-        <InputGroup className="glass-panel border-border/50 focus-within:border-create-accent transition-colors">
-          <InputGroupAddon className="text-create-accent">
-            <MailIcon />
-          </InputGroupAddon>
-          <InputGroupInput
-            type="email"
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="user@example.com"
-            className="font-[family-name:var(--font-outfit)] bg-transparent"
-          />
-        </InputGroup>
         <Button
           type="button"
-          disabled={!email}
           onClick={() => {
-            window.location.href = `/api/oauth/login?email=${encodeURIComponent(email)}`;
+            window.location.href = `/api/oauth/login`;
           }}
           className="w-full bg-create-accent hover:bg-create-accent/90 text-white font-[family-name:var(--font-outfit)] font-medium transition-all"
         >
