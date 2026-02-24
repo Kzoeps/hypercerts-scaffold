@@ -8,6 +8,8 @@
 
 import * as crypto from "node:crypto";
 
+const EPDS_TIMEOUT_MS = 15_000;
+
 // ─── PKCE ────────────────────────────────────────────────────────────────────
 
 /**
@@ -154,6 +156,7 @@ export async function fetchWithDpopRetry(
       DPoP: dpopProof,
     },
     body: body.toString(),
+    signal: AbortSignal.timeout(EPDS_TIMEOUT_MS),
   });
 
   if (!res.ok) {
@@ -173,6 +176,7 @@ export async function fetchWithDpopRetry(
           DPoP: dpopProof,
         },
         body: body.toString(),
+        signal: AbortSignal.timeout(EPDS_TIMEOUT_MS),
       });
     }
   }
