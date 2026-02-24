@@ -38,7 +38,10 @@ export default function HypercertDetailsView({
 }) {
   const workScope = Array.isArray(record.workScope) ? record.workScope : [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- contributors field exists on record but not in HypercertClaim type yet
-  const contributors = (record as any).contributors;
+  const rawContributors = (record as any).contributors;
+  const contributors = Array.isArray(rawContributors)
+    ? rawContributors
+    : undefined;
 
   return (
     <div className="space-y-6">
