@@ -155,7 +155,7 @@ export default function LoginDialog() {
   const hasEpds = !!process.env.NEXT_PUBLIC_EPDS_URL;
 
   return (
-    <div className="w-full space-y-5">
+    <div className="w-full max-w-sm space-y-5">
       <div>
         <h2 className="text-xl font-[family-name:var(--font-syne)] font-bold text-foreground tracking-tight">
           Sign In
