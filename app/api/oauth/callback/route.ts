@@ -140,12 +140,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   response.cookies.set("user-did", tokenData.sub, {
     httpOnly: true,
     secure: config.isProduction,
+    sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7, // 1 week
     path: "/",
   });
 
   // 14. Delete the epds-oauth-session cookie
   response.cookies.set(EPDS_SESSION_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: config.isProduction,
+    sameSite: 'lax',
     maxAge: 0,
     path: "/",
   });
