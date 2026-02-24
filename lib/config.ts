@@ -229,7 +229,9 @@ export function buildClientMetadata(): Record<string, unknown> {
       client_id: config.clientId,
       client_name: "Hypercerts Scaffold",
       client_uri: config.baseUrl,
-      redirect_uris: [config.redirectUri],
+      redirect_uris: config.epdsUrl
+        ? [config.redirectUri, config.epdsRedirectUri]
+        : [config.redirectUri],
       scope: OAUTH_SCOPE,
       logo_uri: `${config.baseUrl}/certified-logo.svg`,
       grant_types: ["authorization_code", "refresh_token"],
@@ -245,7 +247,9 @@ export function buildClientMetadata(): Record<string, unknown> {
     client_id: config.clientId,
     client_name: "Hypercerts Scaffold",
     client_uri: config.baseUrl,
-    redirect_uris: [config.redirectUri],
+    redirect_uris: config.epdsUrl
+      ? [config.redirectUri, config.epdsRedirectUri]
+      : [config.redirectUri],
     scope: OAUTH_SCOPE,
       logo_uri: `${config.baseUrl}/certified-logo.svg`,
       grant_types: ["authorization_code", "refresh_token"],
