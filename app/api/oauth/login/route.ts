@@ -17,7 +17,10 @@ import {
 } from "@/lib/epds-session-cookie";
 import { config } from "@/lib/config";
 
-export async function GET(_req: NextRequest): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // 0. Read optional email for login_hint (Flow 1)
+  const email = req.nextUrl.searchParams.get("email");
+
   // 1. Generate PKCE + DPoP values
   const { privateKey, publicJwk, privateJwk } = generateDpopKeyPair();
   const codeVerifier = generateCodeVerifier();
@@ -71,10 +74,15 @@ if (!parResponse.ok) {
   });
 
   // 9. Build auth URL with all required params
-  const authUrl = `${authEndpoint}?client_id=${encodeURIComponent(clientId)}&request_uri=${encodeURIComponent(request_uri)}`;
+  const authUrl = new URL(authEndpoint);
+  authUrl.searchParams.set("client_id", clientId);
+  authUrl.searchParams.set("request_uri", request_uri);
+  if (email) {
+    authUrl.searchParams.set("login_hint", email);
+  }
 
   // 10. Create redirect response
-  const response = NextResponse.redirect(authUrl);
+  const response = NextResponse.redirect(authUrl.toString());
 
   // 11. Set session cookie
   response.cookies.set(EPDS_SESSION_COOKIE_NAME, encodedCookie, {
