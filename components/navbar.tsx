@@ -173,7 +173,7 @@ export default function Navbar({
                   Sign In
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-xl glass-panel border-border/60 p-6">
+              <DialogContent className="sm:max-w-sm glass-panel border-border/60 p-6">
                 <DialogTitle className="sr-only">Sign In</DialogTitle>
                 <LoginDialog />
               </DialogContent>
