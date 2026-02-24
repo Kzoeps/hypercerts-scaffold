@@ -162,6 +162,7 @@ try {
 
 const redirectBaseUrl = getRedirectBaseUrl(baseUrl);
 const redirectUri = `${redirectBaseUrl}/api/auth/callback`;
+const epdsRedirectUri = `${redirectBaseUrl}/api/oauth/callback`;
 const jwksUri = `${redirectBaseUrl}/jwks.json`;
 const clientId = buildClientId(baseUrl, OAUTH_SCOPE, redirectUri);
 
@@ -187,8 +188,16 @@ export const config = {
   // OAuth configuration
   clientId,
   redirectUri,
+  epdsRedirectUri,
   jwksUri,
   scope: OAUTH_SCOPE,
+
+  // ePDS (certified PDS) configuration — optional, only needed for ePDS login
+  epdsUrl: process.env.NEXT_PUBLIC_EPDS_URL,
+
+  // Server-only secret for HMAC-signing the transient OAuth session cookie
+  // Must be 32+ characters. Only needed if ePDS login is used.
+  oauthSessionSecret: process.env.OAUTH_SESSION_SECRET,
 
   handleResolver: process.env.NEXT_PUBLIC_HANDLE_RESOLVER || "https://bsky.social",
 
