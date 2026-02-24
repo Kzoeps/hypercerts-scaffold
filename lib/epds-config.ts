@@ -24,11 +24,14 @@ export function getEpdsEndpoints(): {
   }
 
   const epdsUrl = config.epdsUrl;
-  const hostname = new URL(epdsUrl).hostname;
+  const url = new URL(epdsUrl);
+  const authHost = url.port
+    ? `auth.${url.hostname}:${url.port}`
+    : `auth.${url.hostname}`;
 
   return {
     parEndpoint: `${epdsUrl}/oauth/par`,
-    authEndpoint: `https://auth.${hostname}/oauth/authorize`,
+    authEndpoint: `${url.protocol}//${authHost}/oauth/authorize`,
     tokenEndpoint: `${epdsUrl}/oauth/token`,
   };
 }

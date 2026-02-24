@@ -9,6 +9,7 @@
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { config } from "@/lib/config";
 
 export const EPDS_SESSION_COOKIE_NAME = "epds-oauth-session";
 
@@ -19,11 +20,11 @@ export interface EpdsOAuthSessionData {
 }
 
 /**
- * Get the OAUTH_SESSION_SECRET from environment variables.
+ * Get the OAUTH_SESSION_SECRET from centralized config.
  * Throws if not set.
  */
 function getSessionSecret(): string {
-  const secret = process.env.OAUTH_SESSION_SECRET;
+  const secret = config.oauthSessionSecret;
   if (!secret) {
     throw new Error(
       "OAUTH_SESSION_SECRET is not configured. " +
