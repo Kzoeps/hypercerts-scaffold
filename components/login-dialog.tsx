@@ -14,7 +14,7 @@ import { useLoginMutation } from "@/queries/auth";
 // ─── Pill Toggle ─────────────────────────────────────────────────────────────
 
 type Tab = "handle" | "email";
-type AuthMode = "signin" | "signup";
+export type AuthMode = "signin" | "signup";
 
 function PillToggle({
   active,
@@ -180,9 +180,11 @@ function EmailForm({
 
 // ─── Main LoginDialog ─────────────────────────────────────────────────────────
 
-export default function LoginDialog() {
+export default function LoginDialog({
+  initialMode = "signin",
+}: { initialMode?: AuthMode } = {}) {
   const [activeTab, setActiveTab] = useState<Tab>("handle");
-  const [mode, setMode] = useState<AuthMode>("signin");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const hasEpds = !!process.env.NEXT_PUBLIC_EPDS_URL;
 
   return (
