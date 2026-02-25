@@ -1,5 +1,6 @@
 "use client";
-import { AtSignIcon } from "lucide-react";
+import { AtSignIcon, MailIcon } from "lucide-react";
+import { useState, FormEventHandler } from "react";
 
 import {
   InputGroup,
@@ -7,11 +8,51 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Button } from "./ui/button";
-import { FormEventHandler, useState } from "react";
 import { Spinner } from "./ui/spinner";
 import { useLoginMutation } from "@/queries/auth";
 
-export default function LoginDialog() {
+// ─── Pill Toggle ─────────────────────────────────────────────────────────────
+
+type Tab = "handle" | "email";
+
+function PillToggle({
+  active,
+  onChange,
+}: {
+  active: Tab;
+  onChange: (tab: Tab) => void;
+}) {
+  return (
+    <div className="flex w-full rounded-full bg-muted p-1">
+      <button
+        type="button"
+        onClick={() => onChange("handle")}
+        className={`flex-1 rounded-full px-4 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium transition-all duration-200 ${
+          active === "handle"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        Handle
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("email")}
+        className={`flex-1 rounded-full px-4 py-1.5 text-sm font-[family-name:var(--font-outfit)] font-medium transition-all duration-200 ${
+          active === "email"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        Email
+      </button>
+    </div>
+  );
+}
+
+// ─── Handle Form ──────────────────────────────────────────────────────────────
+
+function HandleForm() {
   const [handle, setHandle] = useState("");
   const loginMutation = useLoginMutation();
 
@@ -28,33 +69,18 @@ export default function LoginDialog() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid w-full max-w-sm gap-6 py-10">
-      <div className="space-y-2 animate-fade-in-up">
-        <h2 className="text-2xl font-[family-name:var(--font-syne)] font-bold text-foreground">
-          Sign In
-        </h2>
-        <p className="text-sm font-[family-name:var(--font-outfit)] text-muted-foreground">
-          Enter your handle to continue
-        </p>
-      </div>
-
-      <div className="animate-fade-in-up [animation-delay:100ms] space-y-3">
-        <InputGroup className="glass-panel border-border/50 focus-within:border-create-accent transition-colors">
-          <InputGroupAddon className="text-create-accent">
-            <AtSignIcon />
-          </InputGroupAddon>
-          <InputGroupInput
-            onChange={(e) => setHandle(e.target.value)}
-            placeholder="kzoeps.bsky.social"
-            className="font-[family-name:var(--font-outfit)] bg-transparent"
-          />
-        </InputGroup>
-        {/* {hostname && (
-          <p className="text-sm font-[family-name:var(--font-outfit)] text-muted-foreground px-1">
-            Full handle: <span className="text-create-accent font-medium">{handle || "..."}.{hostname}</span>
-          </p>
-        )} */}
-      </div>
+    <form onSubmit={handleSubmit} className="w-full space-y-3 animate-fade-in">
+      <InputGroup className="glass-panel border-border/50 focus-within:border-create-accent transition-colors">
+        <InputGroupAddon className="text-create-accent">
+          <AtSignIcon />
+        </InputGroupAddon>
+        <InputGroupInput
+          onChange={(e) => setHandle(e.target.value)}
+          value={handle}
+          placeholder="kzoeps.bsky.social"
+          className="font-[family-name:var(--font-outfit)] bg-transparent"
+        />
+      </InputGroup>
 
       <div className="animate-fade-in-up [animation-delay:200ms] space-y-3">
         <Button
@@ -68,7 +94,7 @@ export default function LoginDialog() {
         <Button
           disabled={loginMutation.isPending}
           onClick={redirectToAccountCreation}
-          variant={"ghost"}
+          variant="ghost"
           type="button"
           className="w-full font-[family-name:var(--font-outfit)] text-muted-foreground hover:text-create-accent hover:bg-muted/50 transition-colors"
         >
@@ -76,5 +102,95 @@ export default function LoginDialog() {
         </Button>
       </div>
     </form>
+  );
+}
+
+// ─── Email Form ───────────────────────────────────────────────────────────────
+
+function EmailForm() {
+  const [email, setEmail] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const handleContinue = () => {
+    setIsRedirecting(true);
+    const url = email
+      ? `/api/oauth/login?email=${encodeURIComponent(email)}`
+      : `/api/oauth/login`;
+    window.location.href = url;
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleContinue();
+      }}
+      className="w-full space-y-3 animate-fade-in"
+    >
+      <div className="space-y-2">
+        <InputGroup className="glass-panel border-border/50 focus-within:border-create-accent transition-colors">
+          <InputGroupAddon className="text-create-accent/70">
+            <MailIcon />
+          </InputGroupAddon>
+          <InputGroupInput
+            type="email"
+            onChange={(e) => setEmail(e.target.value)}
+            value={email}
+            placeholder="you@example.com"
+            className="font-[family-name:var(--font-outfit)] bg-transparent"
+          />
+        </InputGroup>
+        <p className="text-xs font-[family-name:var(--font-outfit)] text-muted-foreground px-1">
+          Enter your email for a direct code, or continue without
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Button
+          type="submit"
+          disabled={isRedirecting}
+          className="w-full bg-create-accent hover:bg-create-accent/90 text-white font-[family-name:var(--font-outfit)] font-semibold transition-all"
+        >
+          {isRedirecting && <Spinner />}
+          Continue
+        </Button>
+        <Button
+          type="button"
+          disabled={isRedirecting}
+          onClick={() => {
+            setIsRedirecting(true);
+            window.location.href = "/api/oauth/login";
+          }}
+          variant="ghost"
+          className="w-full font-[family-name:var(--font-outfit)] text-muted-foreground hover:text-create-accent hover:bg-muted/50 transition-colors"
+        >
+          Don&apos;t have an account? Create one
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// ─── Main LoginDialog ─────────────────────────────────────────────────────────
+
+export default function LoginDialog() {
+  const [activeTab, setActiveTab] = useState<Tab>("handle");
+  const hasEpds = !!process.env.NEXT_PUBLIC_EPDS_URL;
+
+  return (
+    <div className="w-full max-w-sm space-y-5">
+      <div>
+        <h2 className="text-xl font-[family-name:var(--font-syne)] font-bold text-foreground tracking-tight">
+          Sign In
+        </h2>
+        <p className="text-sm font-[family-name:var(--font-outfit)] text-muted-foreground">
+          Choose how to continue
+        </p>
+      </div>
+
+      {hasEpds && <PillToggle active={activeTab} onChange={setActiveTab} />}
+
+      {activeTab === "handle" || !hasEpds ? <HandleForm /> : <EmailForm />}
+    </div>
   );
 }

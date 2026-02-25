@@ -35,7 +35,7 @@ export interface HypercertsBaseFormProps {
   saveDisabled: boolean;
   onSave?: (record: CreateHypercertParams, advance?: boolean) => void;
   updateActions?: boolean;
-  certInfo?: HypercertRecord;
+  certInfo?: Hypercert.Main;
   hypercertUri?: string;
   nextStepper: () => void;
 }

@@ -212,6 +212,7 @@ export const OAUTH_SCOPE = GRANULAR_SCOPE;
 
 const redirectBaseUrl = getRedirectBaseUrl(baseUrl);
 const redirectUri = `${redirectBaseUrl}/api/auth/callback`;
+const epdsRedirectUri = `${redirectBaseUrl}/api/oauth/callback`;
 const jwksUri = `${redirectBaseUrl}/jwks.json`;
 const clientId = buildClientId(baseUrl, OAUTH_SCOPE, redirectUri);
 
@@ -237,14 +238,19 @@ export const config = {
   // OAuth configuration
   clientId,
   redirectUri,
+  epdsRedirectUri,
   jwksUri,
   scope: OAUTH_SCOPE,
 
+  // ePDS (certified PDS) configuration — optional, only needed for ePDS login
+  epdsUrl: process.env.NEXT_PUBLIC_EPDS_URL,
+
+  // Server-only secret for HMAC-signing the transient OAuth session cookie
+  // Must be 32+ characters. Only needed if ePDS login is used.
+  oauthSessionSecret: process.env.OAUTH_SESSION_SECRET,
+
   handleResolver:
     process.env.NEXT_PUBLIC_HANDLE_RESOLVER || "https://bsky.social",
-
-  // Network endpoints
-  pdsUrl: process.env.NEXT_PUBLIC_PDS_URL!,
 
   // Redis configuration
   redis: {
@@ -274,9 +280,15 @@ export function buildClientMetadata(): Record<string, unknown> {
       client_id: config.clientId,
       client_name: "Hypercerts Scaffold",
       client_uri: config.baseUrl,
-      redirect_uris: [config.redirectUri],
+      redirect_uris: config.epdsUrl
+        ? [config.redirectUri, config.epdsRedirectUri]
+        : [config.redirectUri],
       scope: OAUTH_SCOPE,
-      logo_uri: `${config.baseUrl}/certified-logo.svg`,
+      logo_uri: `${config.baseUrl}/certified.png`,
+      email_template_uri: `${config.baseUrl}/email-template.html`,
+      email_subject_template: "{{code}} — Your {{app_name}} verification code",
+      brand_color: "#1c1e21",
+      background_color: "#f8f8fa",
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
       token_endpoint_auth_method: "none",
@@ -290,9 +302,15 @@ export function buildClientMetadata(): Record<string, unknown> {
     client_id: config.clientId,
     client_name: "Hypercerts Scaffold",
     client_uri: config.baseUrl,
-    redirect_uris: [config.redirectUri],
+    redirect_uris: config.epdsUrl
+      ? [config.redirectUri, config.epdsRedirectUri]
+      : [config.redirectUri],
     scope: OAUTH_SCOPE,
-    logo_uri: `${config.baseUrl}/certified-logo.svg`,
+    logo_uri: `${config.baseUrl}/certified.png`,
+    email_template_uri: `${config.baseUrl}/email-template.html`,
+    email_subject_template: "{{code}} — Your {{app_name}} verification code",
+    brand_color: "#1c1e21",
+    background_color: "#f8f8fa",
     grant_types: ["authorization_code", "refresh_token"],
     response_types: ["code"],
     token_endpoint_auth_method: "none",

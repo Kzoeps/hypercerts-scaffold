@@ -1,9 +1,14 @@
 import { createATProtoSDK } from "@hypercerts-org/sdk-core";
 import { config, OAUTH_SCOPE } from "./config";
-import { RedisSessionStore, RedisStateStore } from "./redis-state-store";
+import {
+  RedisSessionStore,
+  RedisStateStore,
+  RedisEpdsStateStore,
+} from "./redis-state-store";
 
 export const sessionStore = new RedisSessionStore();
 export const stateStore = new RedisStateStore();
+export const epdsStateStore = new RedisEpdsStateStore();
 
 export { OAUTH_SCOPE };
 
