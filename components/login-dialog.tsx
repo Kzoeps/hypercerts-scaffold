@@ -14,6 +14,7 @@ import { useLoginMutation } from "@/queries/auth";
 // ─── Pill Toggle ─────────────────────────────────────────────────────────────
 
 type Tab = "handle" | "email";
+type AuthMode = "signin" | "signup";
 
 function PillToggle({
   active,
@@ -52,20 +53,19 @@ function PillToggle({
 
 // ─── Handle Form ──────────────────────────────────────────────────────────────
 
-function HandleForm() {
+function HandleForm({
+  mode,
+  setMode,
+}: {
+  mode: AuthMode;
+  setMode: (m: AuthMode) => void;
+}) {
   const [handle, setHandle] = useState("");
   const loginMutation = useLoginMutation();
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     loginMutation.mutate(handle);
-  };
-
-  const redirectToAccountCreation = () => {
-    if (!process.env.NEXT_PUBLIC_PDS_URL) {
-      throw new Error("NEXT_PUBLIC_PDS_URL is not defined");
-    }
-    loginMutation.mutate(process.env.NEXT_PUBLIC_PDS_URL);
   };
 
   return (
@@ -93,7 +93,7 @@ function HandleForm() {
         </Button>
         <Button
           disabled={loginMutation.isPending}
-          onClick={redirectToAccountCreation}
+          onClick={() => setMode("signup")}
           variant="ghost"
           type="button"
           className="w-full font-[family-name:var(--font-outfit)] text-muted-foreground hover:text-create-accent hover:bg-muted/50 transition-colors"
@@ -107,7 +107,13 @@ function HandleForm() {
 
 // ─── Email Form ───────────────────────────────────────────────────────────────
 
-function EmailForm() {
+function EmailForm({
+  mode,
+  setMode,
+}: {
+  mode: AuthMode;
+  setMode: (m: AuthMode) => void;
+}) {
   const [email, setEmail] = useState("");
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -141,7 +147,9 @@ function EmailForm() {
           />
         </InputGroup>
         <p className="text-xs font-[family-name:var(--font-outfit)] text-muted-foreground px-1">
-          Enter your email for a direct code, or continue without
+          {mode === "signup"
+            ? "Enter your email to create your account"
+            : "Enter your email for a direct code, or continue without"}
         </p>
       </div>
 
@@ -152,19 +160,18 @@ function EmailForm() {
           className="w-full bg-create-accent hover:bg-create-accent/90 text-white font-[family-name:var(--font-outfit)] font-semibold transition-all"
         >
           {isRedirecting && <Spinner />}
-          Continue
+          {mode === "signup" ? "Create Account" : "Continue"}
         </Button>
         <Button
           type="button"
           disabled={isRedirecting}
-          onClick={() => {
-            setIsRedirecting(true);
-            window.location.href = "/api/oauth/login";
-          }}
+          onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
           variant="ghost"
           className="w-full font-[family-name:var(--font-outfit)] text-muted-foreground hover:text-create-accent hover:bg-muted/50 transition-colors"
         >
-          Don&apos;t have an account? Create one
+          {mode === "signup"
+            ? "Already have an account? Sign in"
+            : "Don\u0027t have an account? Create one"}
         </Button>
       </div>
     </form>
@@ -175,22 +182,35 @@ function EmailForm() {
 
 export default function LoginDialog() {
   const [activeTab, setActiveTab] = useState<Tab>("handle");
+  const [mode, setMode] = useState<AuthMode>("signin");
   const hasEpds = !!process.env.NEXT_PUBLIC_EPDS_URL;
 
   return (
     <div className="w-full max-w-sm space-y-5">
       <div>
         <h2 className="text-xl font-[family-name:var(--font-syne)] font-bold text-foreground tracking-tight">
-          Sign In
+          {mode === "signup" ? "Create Account" : "Sign In"}
         </h2>
         <p className="text-sm font-[family-name:var(--font-outfit)] text-muted-foreground">
-          Choose how to continue
+          {mode === "signup"
+            ? "Get started with your account"
+            : "Choose how to continue"}
         </p>
       </div>
 
-      {hasEpds && <PillToggle active={activeTab} onChange={setActiveTab} />}
+      {/* Only show PillToggle in signin mode when ePDS is available */}
+      {mode === "signin" && hasEpds && (
+        <PillToggle active={activeTab} onChange={setActiveTab} />
+      )}
 
-      {activeTab === "handle" || !hasEpds ? <HandleForm /> : <EmailForm />}
+      {/* In signup mode, always show EmailForm. In signin mode, show based on activeTab */}
+      {mode === "signup" ? (
+        <EmailForm mode={mode} setMode={setMode} />
+      ) : activeTab === "handle" || !hasEpds ? (
+        <HandleForm mode={mode} setMode={setMode} />
+      ) : (
+        <EmailForm mode={mode} setMode={setMode} />
+      )}
     </div>
   );
 }
