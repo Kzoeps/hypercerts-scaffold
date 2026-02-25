@@ -145,7 +145,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     response.cookies.set("user-did", tokenData.sub, {
       httpOnly: true,
       secure: config.isProduction,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
     });
 
