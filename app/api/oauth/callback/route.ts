@@ -144,7 +144,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     // Avoids stale cookie outliving the backend session (Redis/refresh token)
     response.cookies.set("user-did", tokenData.sub, {
       httpOnly: true,
-      secure: true,
+      secure: config.isProduction,
       sameSite: "strict",
       path: "/",
     });
