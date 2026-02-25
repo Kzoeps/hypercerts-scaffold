@@ -53,19 +53,20 @@ function PillToggle({
 
 // ─── Handle Form ──────────────────────────────────────────────────────────────
 
-function HandleForm({
-  mode,
-  setMode,
-}: {
-  mode: AuthMode;
-  setMode: (m: AuthMode) => void;
-}) {
+function HandleForm() {
   const [handle, setHandle] = useState("");
   const loginMutation = useLoginMutation();
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     loginMutation.mutate(handle);
+  };
+
+  const redirectToAccountCreation = () => {
+    if (!process.env.NEXT_PUBLIC_PDS_URL) {
+      throw new Error("NEXT_PUBLIC_PDS_URL is not defined");
+    }
+    loginMutation.mutate(process.env.NEXT_PUBLIC_PDS_URL);
   };
 
   return (
@@ -93,7 +94,7 @@ function HandleForm({
         </Button>
         <Button
           disabled={loginMutation.isPending}
-          onClick={() => setMode("signup")}
+          onClick={redirectToAccountCreation}
           variant="ghost"
           type="button"
           className="w-full font-[family-name:var(--font-outfit)] text-muted-foreground hover:text-create-accent hover:bg-muted/50 transition-colors"
@@ -209,7 +210,7 @@ export default function LoginDialog({
       {mode === "signup" ? (
         <EmailForm mode={mode} setMode={setMode} />
       ) : activeTab === "handle" || !hasEpds ? (
-        <HandleForm mode={mode} setMode={setMode} />
+        <HandleForm />
       ) : (
         <EmailForm mode={mode} setMode={setMode} />
       )}
