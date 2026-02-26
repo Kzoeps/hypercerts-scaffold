@@ -58,6 +58,7 @@
     "@atproto/lex-cli": "^0.9.6",
     "@atproto/xrpc-server": "^0.9.5",
     "@tailwindcss/postcss": "^4",
+    "@tanstack/eslint-plugin-query": "^5.91.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
