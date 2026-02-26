@@ -6,7 +6,7 @@ import {
   getEpdsRedirectUri,
 } from "@/lib/epds-config";
 import { sessionStore, epdsStateStore } from "@/lib/hypercerts-sdk";
-import { config } from "@/lib/config";
+import { config, OAUTH_SCOPE } from "@/lib/config";
 import type { NodeSavedSession } from "@atproto/oauth-client-node";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -123,7 +123,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         sub: tokenData.sub as unknown as NodeSavedSession["tokenSet"]["sub"],
         aud: issuer, // audience = PDS URL (same as issuer for ePDS users)
         scope: (tokenData.scope ??
-          "atproto transition:generic") as NodeSavedSession["tokenSet"]["scope"],
+          OAUTH_SCOPE) as NodeSavedSession["tokenSet"]["scope"],
         access_token: tokenData.access_token,
         token_type: "DPoP" as const,
         refresh_token: tokenData.refresh_token,

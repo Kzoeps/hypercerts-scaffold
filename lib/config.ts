@@ -9,11 +9,7 @@
  * @see https://datatracker.ietf.org/doc/html/rfc8252 (OAuth for Native Apps)
  */
 
-import {
-  ATPROTO_SCOPE,
-  TRANSITION_SCOPES,
-  HYPERCERT_COLLECTIONS,
-} from "@hypercerts-org/sdk-core";
+import { ATPROTO_SCOPE, HYPERCERT_COLLECTIONS } from "@hypercerts-org/sdk-core";
 import { generateBrandingCss } from "./atproto-branding";
 
 // Granular repo scope — collections with full CRUD access
@@ -48,7 +44,6 @@ const GRANULAR_SCOPE = [
   RPC_SCOPE,
   BLOB_SCOPE,
 ].join(" ");
-const LOOPBACK_SCOPE = [ATPROTO_SCOPE, TRANSITION_SCOPES.GENERIC].join(" ");
 
 /**
  * Validates a URL format
@@ -76,18 +71,6 @@ function isLoopback(url: string): boolean {
   } catch {
     return false;
   }
-}
-
-/**
- * Returns the appropriate OAuth scope based on the environment.
- * - Loopback (local dev): uses "atproto transition:generic" (ATProto requirement for loopback clients)
- * - Production: uses granular scopes (repo, rpc, blob) for precise permission requests
- */
-function getOAuthScope(url: string): string {
-  if (isLoopback(url)) {
-    return LOOPBACK_SCOPE;
-  }
-  return GRANULAR_SCOPE;
 }
 
 /**
@@ -204,9 +187,7 @@ try {
 }
 
 /**
- * OAuth scope configuration — environment-aware:
- * - Loopback (local dev): "atproto transition:generic" (ATProto requirement for loopback clients)
- * - Production: granular scopes (repo, rpc, blob) for precise permission requests
+ * OAuth scope — granular scopes (repo, rpc, blob) for all environments.
  */
 export const OAUTH_SCOPE = GRANULAR_SCOPE;
 
@@ -214,6 +195,7 @@ const redirectBaseUrl = getRedirectBaseUrl(baseUrl);
 const redirectUri = `${redirectBaseUrl}/api/auth/callback`;
 const epdsRedirectUri = `${redirectBaseUrl}/api/oauth/callback`;
 const jwksUri = `${redirectBaseUrl}/jwks.json`;
+const epdsClientId = buildClientId(baseUrl, OAUTH_SCOPE, epdsRedirectUri);
 const clientId = buildClientId(baseUrl, OAUTH_SCOPE, redirectUri);
 
 // Environment flags
@@ -244,6 +226,7 @@ export const config = {
 
   // ePDS (certified PDS) configuration — optional, only needed for ePDS login
   epdsUrl: process.env.NEXT_PUBLIC_EPDS_URL,
+  epdsClientId,
 
   // Server-only secret for HMAC-signing the transient OAuth session cookie
   // Must be 32+ characters. Only needed if ePDS login is used.
