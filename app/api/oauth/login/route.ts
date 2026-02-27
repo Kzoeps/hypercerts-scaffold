@@ -36,7 +36,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       redirect_uri: redirectUri,
       response_type: "code",
       scope: OAUTH_SCOPE,
-      application_type: config.isLoopback ? "native" : "web",
+      application_type: "web",
       state,
       code_challenge: codeChallenge,
       code_challenge_method: "S256",
