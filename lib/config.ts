@@ -10,6 +10,7 @@
  */
 
 import { ATPROTO_SCOPE, HYPERCERT_COLLECTIONS } from "@hypercerts-org/sdk-core";
+import { OAuthClientMetadataInput } from "@atproto/oauth-client-node";
 import { generateBrandingCss } from "./atproto-branding";
 
 // Granular repo scope — collections with full CRUD access
@@ -256,7 +257,8 @@ export const config = {
  * @returns OAuth client metadata object
  * @see https://datatracker.ietf.org/doc/html/rfc7591
  */
-export function buildClientMetadata(): Record<string, unknown> {
+export function buildClientMetadata(): OAuthClientMetadataInput &
+  Record<string, unknown> {
   if (config.isLoopback) {
     // Loopback mode: no branding, application_type is "native"
     return {
@@ -275,12 +277,12 @@ export function buildClientMetadata(): Record<string, unknown> {
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
       token_endpoint_auth_method: "none",
-      application_type: "native",
+      jwks_uri: config.jwksUri,
+      application_type: "web",
       dpop_bound_access_tokens: true,
     };
   }
 
-  // Production mode: include branding, application_type is "web"
   return {
     client_id: config.clientId,
     client_name: "Hypercerts Scaffold",
@@ -289,6 +291,7 @@ export function buildClientMetadata(): Record<string, unknown> {
       ? [config.redirectUri, config.epdsRedirectUri]
       : [config.redirectUri],
     scope: OAUTH_SCOPE,
+    jwks_uri: config.jwksUri,
     logo_uri: `${config.baseUrl}/certified.png`,
     email_template_uri: `${config.baseUrl}/email-template.html`,
     email_subject_template: "{{code}} — Your {{app_name}} verification code",
