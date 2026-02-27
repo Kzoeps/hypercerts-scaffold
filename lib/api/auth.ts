@@ -20,6 +20,6 @@ export async function login(handle: string): Promise<LoginResponse> {
  */
 export async function logout(): Promise<void> {
   await apiClient<void>("/api/oauth/logout", {
-    method: "GET",
+    method: "POST",
   });
 }
