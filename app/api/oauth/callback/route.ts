@@ -41,8 +41,13 @@ export async function GET(req: NextRequest) {
     // The return_to parameter can be set by the login flow to preserve user's location
     const returnTo = searchParams.get("return_to") || "/";
 
-    // Validate returnTo is a relative path (security: prevent open redirect)
-    const redirectPath = returnTo.startsWith("/") ? returnTo : "/";
+    // Validate returnTo is same-origin (security: prevent open redirect via //evil.com)
+    const resolved = new URL(returnTo, config.baseUrl);
+    const base = new URL(config.baseUrl);
+    const redirectPath =
+      resolved.origin === base.origin
+        ? resolved.pathname + resolved.search
+        : "/";
 
     return NextResponse.redirect(new URL(redirectPath, config.baseUrl));
   } catch (e) {
