@@ -121,8 +121,8 @@ function EmailForm({
   const handleContinue = () => {
     setIsRedirecting(true);
     const url = email
-      ? `/api/oauth/login?email=${encodeURIComponent(email)}`
-      : `/api/oauth/login`;
+      ? `/api/oauth/epds/login?email=${encodeURIComponent(email)}`
+      : `/api/oauth/epds/login`;
     window.location.href = url;
   };
 
