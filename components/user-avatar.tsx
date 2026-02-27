@@ -22,8 +22,9 @@ export default function UserAvatar({
       )}
       {!user.avatar && (
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-500 text-white">
-          {user.displayName?.[0].toUpperCase() ||
-            user.handle?.[0].toUpperCase()}
+          {user.displayName?.[0]?.toUpperCase() ??
+            user.handle?.[0]?.toUpperCase() ??
+            "?"}
         </div>
       )}
       <div className="flex flex-col gap-1">
