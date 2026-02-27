@@ -140,7 +140,7 @@ The script outputs the complete environment variable line. You can either copy i
 └──────────────┬──────────────────────────┬───────────────────────┘
                │                          │
     ┌──────────▼──────────┐    ┌──────────▼──────────┐
-    │  /api/auth/*        │    │  /api/oauth/*        │
+    │  /api/oauth/*       │    │  /api/oauth/epds/*   │
     │  (Standard ATProto) │    │  (ePDS Email Login)  │
     │  SDK-managed OAuth  │    │  Manual DPoP + PKCE  │
     └──────────┬──────────┘    └──────────┬───────────┘
@@ -231,7 +231,7 @@ This scaffold uses OAuth 2.0 with DPoP (Demonstrating Proof of Possession) for a
 4. User is redirected to the ePDS authorization page
 5. ePDS sends a one-time password (OTP) to the user's email
 6. User enters the OTP code on the ePDS page
-7. ePDS redirects back to `/api/oauth/callback` with an authorization code
+7. ePDS redirects back to `/api/oauth/epds/callback` with an authorization code
 8. App exchanges the code for tokens using DPoP, creates a session in Redis
 9. User is authenticated — same `user-did` cookie as the standard flow
 
