@@ -1,6 +1,7 @@
 "use server";
 import { getRepoContext } from "@/lib/repo-context";
 import { resolveRecordBlobs } from "./blob-utils";
+import { parseAtUri } from "@/lib/utils";
 
 import { RepositoryRole } from "@hypercerts-org/sdk-core";
 import { cookies } from "next/headers";
@@ -52,9 +53,7 @@ export const logout = async () => {
   sdk.revokeSession(session.sub);
 };
 
-// TODO addContribution in SDK needs to be updated so for now contributions will directly be added through hypercert create
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const addContribution = async (_params: {
+export const addContribution = async (params: {
   hypercertUri: string;
   contributors: string[];
   contributionDetails: {
@@ -64,14 +63,18 @@ export const addContribution = async (_params: {
     endDate?: string;
   };
 }) => {
-  return true;
-  // const ctx = await getRepoContext();
+  const ctx = await getRepoContext();
+  if (!ctx) {
+    throw new Error(
+      "addContribution failed: could not establish repository context.",
+    );
+  }
 
-  // if (!ctx) {
-  //   throw new Error("Unable to get authenticated repository");
-  // }
-
-  // return ctx.scopedRepo.hypercerts.addContribution(params);
+  return ctx.scopedRepo.hypercerts.addContribution({
+    hypercertUri: params.hypercertUri,
+    contributors: params.contributors,
+    contributionDetails: params.contributionDetails,
+  });
 };
 
 export const addEvaluation = async (params: {
@@ -216,4 +219,91 @@ export const getContributorInformationRecord = async (params: {
     data.value = await resolveRecordBlobs(data.value, did);
   }
   return JSON.parse(JSON.stringify(data));
+};
+
+export const deleteHypercert = async (params: { hypercertUri: string }) => {
+  const ctx = await getRepoContext();
+  if (!ctx) {
+    throw new Error(
+      "deleteHypercert failed: could not establish repository context. The user session may have expired or the target DID is unreachable.",
+    );
+  }
+  const parsed = parseAtUri(params.hypercertUri);
+  if (!parsed) {
+    throw new Error("deleteHypercert failed: invalid hypercertUri.");
+  }
+  if (parsed.did !== ctx.activeDid) {
+    throw new Error(
+      "deleteHypercert failed: Forbidden — URI DID does not match active session DID.",
+    );
+  }
+  await ctx.scopedRepo.hypercerts.delete(params.hypercertUri);
+  return { success: true };
+};
+
+export const updateMeasurement = async (params: {
+  measurementUri: string;
+  updates: {
+    metric?: string;
+    value?: string;
+    unit?: string;
+    measurers?: string[];
+    startDate?: string;
+    endDate?: string;
+    methodType?: string;
+    methodURI?: string;
+    evidenceURI?: string[];
+    comment?: string;
+  };
+}) => {
+  const ctx = await getRepoContext();
+  if (!ctx) {
+    throw new Error(
+      "updateMeasurement failed: could not establish repository context.",
+    );
+  }
+  // Defense-in-depth: ATProto scoped repos already prevent cross-repo writes,
+  // but we validate the DID for consistency with deleteRecord/deleteHypercert
+  // and to surface clear errors on mismatched URIs.
+  const parsed = parseAtUri(params.measurementUri);
+  if (!parsed || !parsed.collection || !parsed.rkey) {
+    throw new Error("updateMeasurement failed: invalid AT-URI format");
+  }
+  if (parsed.did !== ctx.activeDid) {
+    throw new Error(
+      "updateMeasurement failed: Forbidden — URI DID does not match active session DID.",
+    );
+  }
+  // Map measurers to SDK format if provided
+  const sdkUpdates = { ...params.updates } as Record<string, unknown>;
+  if (params.updates.measurers) {
+    sdkUpdates.measurers = params.updates.measurers.map((did) => ({ did }));
+  }
+  return ctx.scopedRepo.hypercerts.updateMeasurement(
+    params.measurementUri,
+    sdkUpdates,
+  );
+};
+
+export const deleteRecord = async (params: { recordUri: string }) => {
+  const ctx = await getRepoContext();
+  if (!ctx) {
+    throw new Error(
+      "deleteRecord failed: could not establish repository context.",
+    );
+  }
+  const parsed = parseAtUri(params.recordUri);
+  if (!parsed || !parsed.collection || !parsed.rkey) {
+    throw new Error("deleteRecord failed: invalid AT-URI format");
+  }
+  if (parsed.did !== ctx.activeDid) {
+    throw new Error(
+      "deleteRecord failed: Forbidden — URI DID does not match active session DID.",
+    );
+  }
+  await ctx.scopedRepo.records.delete({
+    collection: parsed.collection,
+    rkey: parsed.rkey,
+  });
+  return { success: true };
 };

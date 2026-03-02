@@ -9,6 +9,8 @@ import type {
   AddAttachmentResponse,
   AddLocationResponse,
   AttachmentLocationParam,
+  UpdateHypercertRequest,
+  UpdateHypercertResponse,
 } from "./types";
 
 /**
@@ -30,10 +32,7 @@ export async function createHypercert(
     formData.append("image", params.image);
   }
 
-  return apiClientFormData<CreateHypercertResponse>(
-    "/api/certs/create",
-    formData,
-  );
+  return apiClientFormData<CreateHypercertResponse>("/api/certs", formData);
 }
 
 /**
@@ -59,10 +58,7 @@ export async function createHypercertFromParams(
     formData.append("contributions", JSON.stringify(params.contributions));
   }
 
-  return apiClientFormData<CreateHypercertResponse>(
-    "/api/certs/create",
-    formData,
-  );
+  return apiClientFormData<CreateHypercertResponse>("/api/certs", formData);
 }
 
 /**
@@ -170,4 +166,40 @@ export async function addLocation(params: {
     "/api/certs/add-location",
     formData,
   );
+}
+
+/**
+ * Update an existing hypercert
+ */
+export async function updateHypercert(
+  params: UpdateHypercertRequest,
+): Promise<UpdateHypercertResponse> {
+  const formData = new FormData();
+  formData.append("hypercertUri", params.hypercertUri);
+
+  if (params.title !== undefined) formData.append("title", params.title);
+  if (params.shortDescription !== undefined)
+    formData.append("shortDescription", params.shortDescription);
+  if (params.description !== undefined)
+    formData.append("description", params.description);
+  if (params.startDate === null) {
+    formData.append("startDate", "null");
+  } else if (params.startDate !== undefined) {
+    formData.append("startDate", params.startDate);
+  }
+  if (params.endDate === null) {
+    formData.append("endDate", "null");
+  } else if (params.endDate !== undefined) {
+    formData.append("endDate", params.endDate);
+  }
+
+  if (params.image === null) {
+    formData.append("image", "null");
+  } else if (params.image) {
+    formData.append("image", params.image);
+  }
+
+  return apiClientFormData<UpdateHypercertResponse>("/api/certs", formData, {
+    method: "PUT",
+  });
 }
