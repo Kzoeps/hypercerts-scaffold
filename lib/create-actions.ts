@@ -268,8 +268,11 @@ export const deleteHypercert = async (params: { hypercertUri: string }) => {
       "deleteHypercert failed: Forbidden — URI DID does not match active session DID.",
     );
   }
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  await ctx.scopedRepo.hypercerts.delete(params.hypercertUri);
+  await ctx.agent.com.atproto.repo.deleteRecord({
+    repo: ctx.activeDid,
+    collection: parsed.collection || "org.hypercerts.claim.activity",
+    rkey: parsed.rkey,
+  });
   return { success: true };
 };
 
@@ -334,8 +337,8 @@ export const deleteRecord = async (params: { recordUri: string }) => {
       "deleteRecord failed: Forbidden — URI DID does not match active session DID.",
     );
   }
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  await ctx.scopedRepo.records.delete({
+  await ctx.agent.com.atproto.repo.deleteRecord({
+    repo: ctx.activeDid,
     collection: parsed.collection,
     rkey: parsed.rkey,
   });

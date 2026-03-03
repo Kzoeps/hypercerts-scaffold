@@ -52,52 +52,83 @@ export async function POST(req: Request) {
 
     // If no displayName, assume no profile record exists yet
     if (!existingProfile?.displayName) {
-      // For create: use undefined for empty fields (no null)
-      const createParams: {
-        displayName?: string;
-        description?: string;
-        pronouns?: string;
-        website?: string;
-        avatar?: File;
-        banner?: File;
-      } = {};
-
-      if (displayName) createParams.displayName = displayName;
-      if (description) createParams.description = description;
-      if (pronouns) createParams.pronouns = pronouns;
-      if (website) createParams.website = website;
-      if (avatar) createParams.avatar = avatar;
-      if (banner) createParams.banner = banner;
-
-      // @ts-expect-error -- Phase 2-4 migration: repo is Agent, not Repository
-      await repo.profile.createCertifiedProfile(createParams);
-    } else {
-      // For update: use null to remove fields, undefined to preserve
-      const updateParams: {
-        displayName?: string | null;
-        description?: string | null;
-        pronouns?: string | null;
-        website?: string | null;
-        avatar?: File | null;
-        banner?: File | null;
-      } = {
-        displayName: displayName || null,
-        description: description || null,
-        pronouns: pronouns || null,
-        website: website || null,
-      };
-
-      // Only include avatar/banner if user uploaded new files
-      // Omitting them (undefined) tells SDK to preserve existing values
+      // Upload blobs if provided
+      let avatarBlob, bannerBlob;
       if (avatar) {
-        updateParams.avatar = avatar;
+        const avatarData = new Blob([avatar], { type: avatar.type });
+        const uploadResult = await repo.com.atproto.repo.uploadBlob(avatarData);
+        avatarBlob = uploadResult.data.blob;
       }
       if (banner) {
-        updateParams.banner = banner;
+        const bannerData = new Blob([banner], { type: banner.type });
+        const uploadResult = await repo.com.atproto.repo.uploadBlob(bannerData);
+        bannerBlob = uploadResult.data.blob;
       }
 
-      // @ts-expect-error -- Phase 2-4 migration: repo is Agent, not Repository
-      await repo.profile.updateCertifiedProfile(updateParams);
+      const record: Record<string, unknown> = {
+        $type: "app.certified.actor.profile",
+      };
+      if (displayName) record.displayName = displayName;
+      if (description) record.description = description;
+      if (pronouns) record.pronouns = pronouns;
+      if (website) record.website = website;
+      if (avatarBlob) record.avatar = avatarBlob;
+      if (bannerBlob) record.banner = bannerBlob;
+
+      await repo.com.atproto.repo.createRecord({
+        repo: repo.assertDid,
+        collection: "app.certified.actor.profile",
+        rkey: "self",
+        record,
+      });
+    } else {
+      // Upload new blobs if provided
+      let avatarBlob, bannerBlob;
+      if (avatar) {
+        const avatarData = new Blob([avatar], { type: avatar.type });
+        const uploadResult = await repo.com.atproto.repo.uploadBlob(avatarData);
+        avatarBlob = uploadResult.data.blob;
+      }
+      if (banner) {
+        const bannerData = new Blob([banner], { type: banner.type });
+        const uploadResult = await repo.com.atproto.repo.uploadBlob(bannerData);
+        bannerBlob = uploadResult.data.blob;
+      }
+
+      // Merge: null = remove, undefined = preserve existing, value = set
+      const updateRecord: Record<string, unknown> = {
+        ...existingProfile,
+        $type: "app.certified.actor.profile",
+      };
+
+      // Handle string fields: null removes, truthy sets, falsy (empty string) removes
+      if (displayName !== undefined) {
+        if (displayName) updateRecord.displayName = displayName;
+        else delete updateRecord.displayName;
+      }
+      if (description !== undefined) {
+        if (description) updateRecord.description = description;
+        else delete updateRecord.description;
+      }
+      if (pronouns !== undefined) {
+        if (pronouns) updateRecord.pronouns = pronouns;
+        else delete updateRecord.pronouns;
+      }
+      if (website !== undefined) {
+        if (website) updateRecord.website = website;
+        else delete updateRecord.website;
+      }
+
+      // Handle blobs: new File = upload and set
+      if (avatarBlob) updateRecord.avatar = avatarBlob;
+      if (bannerBlob) updateRecord.banner = bannerBlob;
+
+      await repo.com.atproto.repo.putRecord({
+        repo: repo.assertDid,
+        collection: "app.certified.actor.profile",
+        rkey: "self",
+        record: updateRecord,
+      });
     }
     revalidatePath("/profile");
 
