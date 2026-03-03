@@ -1,22 +1,20 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
-import sdk from "@/lib/hypercerts-sdk";
-import type { Repository } from "@hypercerts-org/sdk-core";
+import { Agent } from "@atproto/api";
+import type { OAuthSession } from "@atproto/oauth-client-node";
+import oauthClient from "@/lib/hypercerts-sdk";
 
-export const getAuthenticatedRepo = cache(
-  async function getAuthenticatedRepo(): Promise<Repository | null> {
+export type { OAuthSession };
+
+export const getSession = cache(
+  async function getSession(): Promise<OAuthSession | null> {
     const cookieStore = await cookies();
     const userDid = cookieStore.get("user-did")?.value;
-
-    if (!userDid) {
-      return null;
-    }
+    if (!userDid) return null;
 
     try {
-      const session = await sdk.restoreSession(userDid);
-      if (!session) return null;
-      return await sdk.repository(session, { server: "pds" });
+      return await oauthClient.restore(userDid);
     } catch (error) {
       console.error(`Failed to restore session for DID ${userDid}:`, error);
       return null;
@@ -24,19 +22,8 @@ export const getAuthenticatedRepo = cache(
   },
 );
 
-export const getSession = cache(async function getSession() {
-  const cookieStore = await cookies();
-  const did = cookieStore.get("user-did")?.value;
-
-  if (!did) {
-    return null;
-  }
-
-  try {
-    const session = await sdk.restoreSession(did);
-    return session;
-  } catch (error) {
-    console.error(`Failed to restore session for DID ${did}:`, error);
-    return null;
-  }
+export const getAgent = cache(async function getAgent(): Promise<Agent | null> {
+  const session = await getSession();
+  if (!session) return null;
+  return new Agent(session);
 });
