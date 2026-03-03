@@ -44,44 +44,69 @@ export async function POST(req: Request) {
 
     // If no displayName, assume no profile record exists yet
     if (!existingProfile?.displayName) {
-      // For create: use undefined for empty fields (no null)
-      const createParams: {
-        displayName?: string;
-        description?: string;
-        avatar?: File;
-        banner?: File;
-      } = {};
+      // Upload blobs if provided
+      let avatarBlob, bannerBlob;
+      if (avatar) {
+        const avatarData = new Blob([avatar], { type: avatar.type });
+        const uploadResult = await repo.com.atproto.repo.uploadBlob(avatarData);
+        avatarBlob = uploadResult.data.blob;
+      }
+      if (banner) {
+        const bannerData = new Blob([banner], { type: banner.type });
+        const uploadResult = await repo.com.atproto.repo.uploadBlob(bannerData);
+        bannerBlob = uploadResult.data.blob;
+      }
 
-      if (displayName) createParams.displayName = displayName;
-      if (description) createParams.description = description;
-      if (avatar) createParams.avatar = avatar;
-      if (banner) createParams.banner = banner;
+      const record: Record<string, unknown> = {
+        $type: "app.bsky.actor.profile",
+      };
+      if (displayName) record.displayName = displayName;
+      if (description) record.description = description;
+      if (avatarBlob) record.avatar = avatarBlob;
+      if (bannerBlob) record.banner = bannerBlob;
 
-      // @ts-expect-error -- Phase 2-4 migration: repo is Agent, not Repository
-      await repo.profile.createBskyProfile(createParams);
+      await repo.com.atproto.repo.createRecord({
+        repo: repo.assertDid,
+        collection: "app.bsky.actor.profile",
+        rkey: "self",
+        record,
+      });
     } else {
-      // For update: use null to remove fields, undefined to preserve
-      const updateParams: {
-        displayName?: string | null;
-        description?: string | null;
-        avatar?: File | null;
-        banner?: File | null;
-      } = {
+      // Upload blobs if provided
+      let avatarBlob, bannerBlob;
+      if (avatar) {
+        const avatarData = new Blob([avatar], { type: avatar.type });
+        const uploadResult = await repo.com.atproto.repo.uploadBlob(avatarData);
+        avatarBlob = uploadResult.data.blob;
+      }
+      if (banner) {
+        const bannerData = new Blob([banner], { type: banner.type });
+        const uploadResult = await repo.com.atproto.repo.uploadBlob(bannerData);
+        bannerBlob = uploadResult.data.blob;
+      }
+
+      // Merge with existing record: null removes field, undefined preserves existing
+      const record: Record<string, unknown> = {
+        ...existingProfile,
+        $type: "app.bsky.actor.profile",
         displayName: displayName || null,
         description: description || null,
       };
 
-      // Only include avatar/banner if user uploaded new files
-      // Omitting them (undefined) tells SDK to preserve existing values
-      if (avatar) {
-        updateParams.avatar = avatar;
-      }
-      if (banner) {
-        updateParams.banner = banner;
-      }
+      // Only update avatar/banner if user uploaded new files
+      if (avatarBlob) record.avatar = avatarBlob;
+      if (bannerBlob) record.banner = bannerBlob;
 
-      // @ts-expect-error -- Phase 2-4 migration: repo is Agent, not Repository
-      await repo.profile.updateBskyProfile(updateParams);
+      // Remove null fields (null means remove)
+      if (record.displayName === null) delete record.displayName;
+      if (record.description === null) delete record.description;
+
+      await repo.com.atproto.repo.putRecord({
+        repo: repo.assertDid,
+        collection: "app.bsky.actor.profile",
+        rkey: "self",
+        record,
+      });
     }
     revalidatePath("/bsky-profile");
 
