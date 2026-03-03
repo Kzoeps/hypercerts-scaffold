@@ -17,14 +17,21 @@ export const getActiveProfileInfo = async () => {
   const ctx = await getRepoContext();
   if (!ctx) return null;
 
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  const profile = await ctx.scopedRepo.profile
-    .getCertifiedProfile()
+  const profileResult = await ctx.agent.com.atproto.repo
+    .getRecord({
+      repo: ctx.targetDid,
+      collection: "app.certified.actor.profile",
+      rkey: "self",
+    })
     .catch(() => null);
+  const profile =
+    (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
   if (!profile) return null;
   return {
-    name: profile.displayName || profile.handle,
-    handle: profile.handle,
+    name:
+      (profile.displayName as string | undefined) ||
+      (profile.handle as string | undefined),
+    handle: profile.handle as string | undefined,
     isOrganization: false,
   };
 };
@@ -159,8 +166,12 @@ export const getMeasurementRecord = async (params: {
     );
   }
 
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  const data = await ctx.scopedRepo.records.get({ collection, rkey });
+  const result = await ctx.agent.com.atproto.repo.getRecord({
+    repo: did,
+    collection,
+    rkey,
+  });
+  const data: Record<string, unknown> = { ...result.data };
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
@@ -180,8 +191,12 @@ export const getEvaluationRecord = async (params: {
     );
   }
 
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  const data = await ctx.scopedRepo.records.get({ collection, rkey });
+  const result = await ctx.agent.com.atproto.repo.getRecord({
+    repo: did,
+    collection,
+    rkey,
+  });
+  const data: Record<string, unknown> = { ...result.data };
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
@@ -201,8 +216,12 @@ export const getEvidenceRecord = async (params: {
     );
   }
 
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  const data = await ctx.scopedRepo.records.get({ collection, rkey });
+  const result = await ctx.agent.com.atproto.repo.getRecord({
+    repo: did,
+    collection,
+    rkey,
+  });
+  const data: Record<string, unknown> = { ...result.data };
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
@@ -221,8 +240,12 @@ export const getContributorInformationRecord = async (params: {
       "getContributorInformationRecord failed: could not establish repository context. The user session may have expired or the target DID is unreachable.",
     );
   }
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  const data = await ctx.scopedRepo.records.get({ collection, rkey });
+  const result = await ctx.agent.com.atproto.repo.getRecord({
+    repo: did,
+    collection,
+    rkey,
+  });
+  const data: Record<string, unknown> = { ...result.data };
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }

@@ -40,18 +40,15 @@ export async function POST(req: Request) {
     }
 
     // Check if profile exists by fetching it first
-    let existingProfile;
-    try {
-      // @ts-expect-error -- Phase 2-4 migration: repo is Agent, not Repository
-      existingProfile = await repo.profile.getCertifiedProfile();
-    } catch (err: unknown) {
-      const isNotFound = err instanceof Error && /not found/i.test(err.message);
-      if (isNotFound) {
-        existingProfile = null;
-      } else {
-        throw err;
-      }
-    }
+    const existingResult = await repo.com.atproto.repo
+      .getRecord({
+        repo: repo.assertDid,
+        collection: "app.certified.actor.profile",
+        rkey: "self",
+      })
+      .catch(() => null);
+    const existingProfile =
+      (existingResult?.data?.value as Record<string, unknown> | null) ?? null;
 
     // If no displayName, assume no profile record exists yet
     if (!existingProfile?.displayName) {
@@ -104,20 +101,29 @@ export async function POST(req: Request) {
     }
     revalidatePath("/profile");
 
-    // @ts-expect-error -- Phase 2-4 migration: repo is Agent, not Repository
-    const updated = await repo.profile.getCertifiedProfile();
+    const updatedResult = await repo.com.atproto.repo
+      .getRecord({
+        repo: repo.assertDid,
+        collection: "app.certified.actor.profile",
+        rkey: "self",
+      })
+      .catch(() => null);
+    const updated =
+      (updatedResult?.data?.value as Record<string, unknown> | null) ?? null;
 
     // Convert blob URLs to CDN URLs so Next.js remotePatterns allow them
-    const avatarUrl = convertBlobUrlToCdn(updated?.avatar) || "";
-    const bannerUrl = convertBlobUrlToCdn(updated?.banner) || "";
+    const avatarUrl =
+      convertBlobUrlToCdn(updated?.avatar as string | null | undefined) || "";
+    const bannerUrl =
+      convertBlobUrlToCdn(updated?.banner as string | null | undefined) || "";
 
     return NextResponse.json({
       ok: true,
       profile: {
-        displayName: updated?.displayName || "",
-        description: updated?.description || "",
-        pronouns: updated?.pronouns || "",
-        website: updated?.website || "",
+        displayName: (updated?.displayName as string | undefined) || "",
+        description: (updated?.description as string | undefined) || "",
+        pronouns: (updated?.pronouns as string | undefined) || "",
+        website: (updated?.website as string | undefined) || "",
         avatar: avatarUrl,
         banner: bannerUrl,
       },

@@ -16,15 +16,21 @@ export async function SignedInProvider({
   let handle: string | undefined = undefined;
 
   if (session) {
-    const repo = await getAgent();
-    if (repo) {
-      // @ts-expect-error -- Phase 2-4 migration: repo is Agent, not Repository
-      const profile = await repo.profile
-        .getCertifiedProfile()
+    const agent = await getAgent();
+    if (agent) {
+      const profileResult = await agent.com.atproto.repo
+        .getRecord({
+          repo: agent.assertDid,
+          collection: "app.certified.actor.profile",
+          rkey: "self",
+        })
         .catch(() => null);
+      const profile =
+        (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
 
-      avatarUrl = convertBlobUrlToCdn(profile?.avatar) || "";
-      handle = profile?.handle || "";
+      avatarUrl =
+        convertBlobUrlToCdn(profile?.avatar as string | undefined) || "";
+      handle = (profile?.handle as string | undefined) || "";
     }
   }
 

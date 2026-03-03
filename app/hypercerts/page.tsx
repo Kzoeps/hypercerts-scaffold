@@ -32,15 +32,20 @@ export default async function MyHypercertsPage() {
   if (!ctx || !session) redirect("/");
 
   const [hypercertsResult, pdsUrl] = await Promise.all([
-    // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-    ctx.scopedRepo.hypercerts.list({ limit: 100 }),
+    ctx.agent.com.atproto.repo.listRecords({
+      repo: ctx.activeDid,
+      collection: "org.hypercerts.claim.activity",
+      limit: 100,
+    }),
     resolveSessionPds(session),
   ]);
-  // Phase 2-4 migration: hypercertsResult is untyped until scopedRepo is replaced
-  const { records } = hypercertsResult as {
+
+  // listRecords returns { data: { records: Array<{ uri, cid, value }> } }
+  const records = hypercertsResult.data.records.map((r) => ({
+    uri: r.uri,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    records: Array<{ record: any; uri: string }>;
-  };
+    record: r.value as any,
+  }));
 
   return (
     <main className="noise-bg relative min-h-screen">
