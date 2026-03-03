@@ -1,4 +1,7 @@
 export { useCreateHypercertMutation } from "./use-create-hypercert-mutation";
+export { useUpdateHypercertMutation } from "./use-update-hypercert-mutation";
+export { useDeleteHypercertMutation } from "./use-delete-hypercert-mutation";
+export { useDeleteRecordMutation } from "./use-delete-record-mutation";
 export { useAddAttachmentMutation } from "./use-add-attachment-mutation";
 export { useAddLocationMutation } from "./use-add-location-mutation";
 export {

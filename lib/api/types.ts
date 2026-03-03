@@ -2,7 +2,10 @@
  * Shared API types for the application
  */
 
-import type { CreateHypercertResult } from "@hypercerts-org/sdk-core";
+import type {
+  CreateHypercertResult,
+  UpdateResult,
+} from "@hypercerts-org/sdk-core";
 
 // Auth types
 export interface LoginRequest {
@@ -34,6 +37,18 @@ export interface CreateHypercertRequest {
 }
 
 export type CreateHypercertResponse = CreateHypercertResult;
+
+export interface UpdateHypercertRequest {
+  hypercertUri: string;
+  title?: string;
+  shortDescription?: string;
+  description?: string;
+  startDate?: string | null; // null = clear date
+  endDate?: string | null; // null = clear date
+  image?: File | null; // null = remove image
+}
+
+export type UpdateHypercertResponse = UpdateResult;
 
 // Location parameter for attachments - can be a string (AT-URI) or full location creation params
 export type AttachmentLocationParam =

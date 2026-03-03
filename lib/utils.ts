@@ -132,6 +132,12 @@ export function parseAtUri(atUri?: string) {
   return { did, collection, rkey };
 }
 
+export function extractDidFromAtUri(atUri: string): string | null {
+  // Expected: at://<did>/<collection>/<rkey>
+  const match = atUri.match(/^at:\/\/([^/]+)\/([^/]+)\/(.+)$/);
+  return match ? match[1] : null;
+}
+
 export function buildStrongRef(cid?: string, uri?: string) {
   if (!cid || !uri) return;
   return {
