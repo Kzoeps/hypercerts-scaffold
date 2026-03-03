@@ -1,12 +1,15 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/atproto-session";
 import { getRepoContext } from "@/lib/repo-context";
-import { getBlobURL, extractDidFromAtUri } from "@/lib/utils";
+import { getBlobURL, extractDidFromAtUri, parseAtUri } from "@/lib/utils";
 import { resolveSessionPds } from "@/lib/server-utils";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { OrgHypercertsDefs } from "@hypercerts-org/sdk-core";
+import {
+  OrgHypercertsDefs,
+  type HypercertClaim,
+} from "@hypercerts-org/sdk-core";
 import HypercertsEditForm from "@/components/hypercerts-edit-form";
 
 export default async function EditHypercertPage({
@@ -62,8 +65,19 @@ export default async function EditHypercertPage({
     redirect(`/hypercerts/${hypercertUri}`);
   }
 
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  const cert = await viewCtx.scopedRepo.hypercerts.get(decodedUri);
+  const parsed = parseAtUri(decodedUri);
+  const certResult = parsed
+    ? await viewCtx.agent.com.atproto.repo
+        .getRecord({
+          repo: parsed.did,
+          collection: parsed.collection || "org.hypercerts.claim.activity",
+          rkey: parsed.rkey,
+        })
+        .catch(() => null)
+    : null;
+  const cert = certResult
+    ? { record: certResult.data.value as Record<string, unknown> }
+    : null;
   if (!cert?.record)
     return (
       <main className="noise-bg relative min-h-screen">
@@ -134,7 +148,7 @@ export default async function EditHypercertPage({
         <div className="animate-fade-in-up">
           <HypercertsEditForm
             hypercertUri={decodedUri}
-            record={certWithoutImage}
+            record={certWithoutImage as unknown as HypercertClaim}
             imageUri={imageUri}
           />
         </div>

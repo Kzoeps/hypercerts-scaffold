@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import HypercertDetailsView from "@/components/hypercert-detail-view";
 import { getSession } from "@/lib/atproto-session";
 import { getRepoContext } from "@/lib/repo-context";
-import { getBlobURL, extractDidFromAtUri } from "@/lib/utils";
+import { getBlobURL, extractDidFromAtUri, parseAtUri } from "@/lib/utils";
 import { resolveSessionPds } from "@/lib/server-utils";
 import { ArrowLeft, AlertCircle, LogIn } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { OrgHypercertsDefs } from "@hypercerts-org/sdk-core";
+import {
+  OrgHypercertsDefs,
+  type HypercertClaim,
+} from "@hypercerts-org/sdk-core";
 
 export async function generateMetadata({
   params,
@@ -28,15 +31,27 @@ export async function generateMetadata({
       return { title: "Hypercert" };
     }
 
-    // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-    const cert = await viewCtx.scopedRepo.hypercerts.get(decodedUri);
+    const parsed = parseAtUri(decodedUri);
+    const certResult = parsed
+      ? await viewCtx.agent.com.atproto.repo
+          .getRecord({
+            repo: parsed.did,
+            collection: parsed.collection || "org.hypercerts.claim.activity",
+            rkey: parsed.rkey,
+          })
+          .catch(() => null)
+      : null;
+    const cert = certResult
+      ? { record: certResult.data.value as Record<string, unknown> }
+      : null;
     if (!cert?.record) {
       return { title: "Hypercert Not Found" };
     }
 
-    const title = cert.record.title || "Hypercert";
+    const title = (cert.record.title as string) || "Hypercert";
     const description =
-      cert.record.shortDescription || "View this hypercert impact claim.";
+      (cert.record.shortDescription as string) ||
+      "View this hypercert impact claim.";
 
     return {
       title,
@@ -124,8 +139,19 @@ export default async function HypercertViewPage({
       </main>
     );
 
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  const cert = await viewCtx.scopedRepo.hypercerts.get(decodedUri);
+  const parsed = parseAtUri(decodedUri);
+  const certResult = parsed
+    ? await viewCtx.agent.com.atproto.repo
+        .getRecord({
+          repo: parsed.did,
+          collection: parsed.collection || "org.hypercerts.claim.activity",
+          rkey: parsed.rkey,
+        })
+        .catch(() => null)
+    : null;
+  const cert = certResult
+    ? { record: certResult.data.value as Record<string, unknown> }
+    : null;
   if (!cert?.record)
     return (
       <main className="noise-bg relative min-h-screen">
@@ -195,7 +221,7 @@ export default async function HypercertViewPage({
 
         <HypercertDetailsView
           hypercertUri={decodedUri}
-          record={certWithoutImage}
+          record={certWithoutImage as unknown as HypercertClaim}
           imageUri={imageUri}
           isOwner={isOwner}
         />
