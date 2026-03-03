@@ -18,11 +18,18 @@ export const metadata: Metadata = {
 export default async function ProfilePage() {
   const repo = await getAgent();
   if (!repo) redirect("/");
-  // @ts-expect-error -- Phase 2-4 migration: repo is Agent, not Repository
-  const profile = await repo.profile.getCertifiedProfile();
+  const profileResult = await repo.com.atproto.repo
+    .getRecord({
+      repo: repo.assertDid,
+      collection: "app.certified.actor.profile",
+      rkey: "self",
+    })
+    .catch(() => null);
+  const profile =
+    (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
 
-  const avatarUrl = convertBlobUrlToCdn(profile?.avatar);
-  const bannerUrl = convertBlobUrlToCdn(profile?.banner);
+  const avatarUrl = convertBlobUrlToCdn(profile?.avatar as string | undefined);
+  const bannerUrl = convertBlobUrlToCdn(profile?.banner as string | undefined);
 
   return (
     <div className="noise-bg relative min-h-screen">
@@ -46,10 +53,10 @@ export default async function ProfilePage() {
         <main className="animate-fade-in-up max-w-2xl">
           <ProfileForm
             initialProfile={{
-              displayName: profile?.displayName || "",
-              description: profile?.description || "",
-              pronouns: profile?.pronouns || "",
-              website: profile?.website || "",
+              displayName: (profile?.displayName as string | undefined) || "",
+              description: (profile?.description as string | undefined) || "",
+              pronouns: (profile?.pronouns as string | undefined) || "",
+              website: (profile?.website as string | undefined) || "",
               avatarUrl,
               bannerUrl,
             }}

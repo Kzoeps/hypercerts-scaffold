@@ -17,14 +17,21 @@ export const getActiveProfileInfo = async () => {
   const ctx = await getRepoContext();
   if (!ctx) return null;
 
-  // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-  const profile = await ctx.scopedRepo.profile
-    .getCertifiedProfile()
+  const profileResult = await ctx.agent.com.atproto.repo
+    .getRecord({
+      repo: ctx.targetDid,
+      collection: "app.certified.actor.profile",
+      rkey: "self",
+    })
     .catch(() => null);
+  const profile =
+    (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
   if (!profile) return null;
   return {
-    name: profile.displayName || profile.handle,
-    handle: profile.handle,
+    name:
+      (profile.displayName as string | undefined) ||
+      (profile.handle as string | undefined),
+    handle: profile.handle as string | undefined,
     isOrganization: false,
   };
 };
