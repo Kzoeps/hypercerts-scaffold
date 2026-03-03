@@ -1,4 +1,10 @@
 import { getRepoContext } from "@/lib/repo-context";
+import {
+  resolveStrongRef,
+  createLocationRecord,
+  uploadContentBlob,
+  type LocationCreateParams,
+} from "@/lib/atproto-writes";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -124,18 +130,61 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // @ts-expect-error -- Phase 2-4 migration: ctx.scopedRepo no longer exists, migrating to native atproto in Phase 2-4
-    const response = await ctx.scopedRepo.hypercerts.addAttachment({
-      subjects: hypercertUri,
-      content,
+    // 1. Resolve subject to StrongRef
+    const subjectRef = await resolveStrongRef(
+      ctx.agent,
+      hypercertUri,
+      "org.hypercerts.claim.activity",
+    );
+
+    // 2. Resolve content — string URL or uploaded blob
+    let contentField: Record<string, unknown>;
+    if (typeof content === "string") {
+      contentField = { $type: "org.hypercerts.defs#uri", uri: content };
+    } else {
+      // content is a Blob/File
+      const blobRef = await uploadContentBlob(ctx.agent, content);
+      contentField = { $type: "org.hypercerts.defs#smallBlob", blob: blobRef };
+    }
+
+    // 3. Optionally create location record
+    let locationRef: { uri: string; cid: string } | undefined;
+    if (location) {
+      if (typeof location === "string") {
+        locationRef = await resolveStrongRef(
+          ctx.agent,
+          location,
+          "app.certified.location",
+        );
+      } else {
+        locationRef = await createLocationRecord(
+          ctx.agent,
+          ctx.activeDid,
+          location as LocationCreateParams,
+        );
+      }
+    }
+
+    // 4. Build attachment record
+    const record: Record<string, unknown> = {
+      $type: "org.hypercerts.claim.attachment",
+      subjects: [subjectRef],
+      content: [contentField],
       title,
-      shortDescription,
-      description,
-      contentType,
-      ...(location && { location }),
+      createdAt: new Date().toISOString(),
+    };
+    if (shortDescription) record.shortDescription = shortDescription;
+    if (description) record.description = description;
+    if (contentType) record.contentType = contentType;
+    if (locationRef) record.location = locationRef;
+
+    const result = await ctx.agent.com.atproto.repo.createRecord({
+      repo: ctx.activeDid,
+      collection: "org.hypercerts.claim.attachment",
+      record,
     });
 
-    return NextResponse.json(response);
+    return NextResponse.json({ uri: result.data.uri, cid: result.data.cid });
   } catch (e) {
     console.error("Error in add-attachment API:", e);
     return NextResponse.json(
