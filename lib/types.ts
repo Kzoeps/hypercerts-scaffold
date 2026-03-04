@@ -92,11 +92,11 @@ export interface BaseHypercertFormProps {
 
 export enum Collections {
   claim = "org.hypercerts.claim.activity",
-  contribution = "org.hypercerts.claim.contributionDetails",
-  evidence = "org.hypercerts.claim.attachment",
+  contribution = "org.hypercerts.claim.contribution",
+  evidence = "org.hypercerts.context.attachment",
   location = "app.certified.location",
   rights = "org.hypercerts.claim.rights",
-  evaluation = "org.hypercerts.claim.evaluation",
+  evaluation = "org.hypercerts.context.evaluation",
 }
 
 /** Shape of app.certified.actor.profile record value from getRecord() */

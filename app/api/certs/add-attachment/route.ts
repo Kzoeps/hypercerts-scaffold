@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Build attachment record
     const record: OrgHypercertsClaimAttachment.Record = {
-      $type: "org.hypercerts.claim.attachment",
+      $type: "org.hypercerts.context.attachment",
       subjects: [subjectRef],
       content: [contentField],
       title,
@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
 
       const result = await ctx.agent.com.atproto.repo.createRecord({
         repo: ctx.activeDid,
-        collection: "org.hypercerts.claim.attachment",
+        collection: "org.hypercerts.context.attachment",
         record,
       });
 
