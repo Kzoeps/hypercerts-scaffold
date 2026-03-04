@@ -5,6 +5,7 @@ import {
 } from "@/lib/atproto-writes";
 import { parseAtUri, getStringField } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
+import { OrgHypercertsClaimActivity } from "@hypercerts-org/lexicon";
 
 export async function POST(req: NextRequest) {
   try {
@@ -104,9 +105,10 @@ export async function POST(req: NextRequest) {
       collection: hypercertParsed.collection || "org.hypercerts.claim.activity",
       rkey: hypercertParsed.rkey,
     });
-    const existingRecord = existingResult.data.value as Record<string, unknown>;
+    const existingRecord = existingResult.data
+      .value as OrgHypercertsClaimActivity.Record;
 
-    const existingLocations = (existingRecord.locations as unknown[]) || [];
+    const existingLocations = existingRecord.locations ?? [];
     existingRecord.locations = [...existingLocations, locationRef];
 
     // 3. Update hypercert

@@ -7,6 +7,10 @@ import {
 } from "@/lib/atproto-writes";
 import { getStringField } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  OrgHypercertsClaimAttachment,
+  OrgHypercertsDefs,
+} from "@hypercerts-org/lexicon";
 
 export async function POST(req: NextRequest) {
   try {
@@ -136,7 +140,11 @@ export async function POST(req: NextRequest) {
     );
 
     // 2. Resolve content — string URL or uploaded blob
-    let contentField: Record<string, unknown>;
+    let contentField:
+      | (OrgHypercertsDefs.Uri & { $type: "org.hypercerts.defs#uri" })
+      | (OrgHypercertsDefs.SmallBlob & {
+          $type: "org.hypercerts.defs#smallBlob";
+        });
     if (typeof content === "string") {
       contentField = { $type: "org.hypercerts.defs#uri", uri: content };
     } else {
@@ -164,17 +172,17 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Build attachment record
-    const record: Record<string, unknown> = {
+    const record: OrgHypercertsClaimAttachment.Record = {
       $type: "org.hypercerts.claim.attachment",
       subjects: [subjectRef],
       content: [contentField],
       title,
       createdAt: new Date().toISOString(),
+      ...(shortDescription ? { shortDescription } : {}),
+      ...(description ? { description } : {}),
+      ...(contentType ? { contentType } : {}),
+      ...(locationRef ? { location: locationRef } : {}),
     };
-    if (shortDescription) record.shortDescription = shortDescription;
-    if (description) record.description = description;
-    if (contentType) record.contentType = contentType;
-    if (locationRef) record.location = locationRef;
 
     const result = await ctx.agent.com.atproto.repo.createRecord({
       repo: ctx.activeDid,

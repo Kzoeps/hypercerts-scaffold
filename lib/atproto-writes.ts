@@ -3,6 +3,10 @@ import "server-only";
 import { Agent } from "@atproto/api";
 import { BlobRef } from "@atproto/lexicon";
 import { parseAtUri } from "./utils";
+import {
+  AppCertifiedLocation,
+  OrgHypercertsDefs,
+} from "@hypercerts-org/lexicon";
 
 export interface StrongRef {
   uri: string;
@@ -42,7 +46,11 @@ export async function createLocationRecord(
   params: LocationCreateParams,
 ): Promise<StrongRef> {
   // Resolve location content
-  let locationContent: Record<string, unknown>;
+  let locationContent:
+    | (OrgHypercertsDefs.Uri & { $type: "org.hypercerts.defs#uri" })
+    | (OrgHypercertsDefs.SmallBlob & {
+        $type: "org.hypercerts.defs#smallBlob";
+      });
   if (typeof params.location === "string") {
     // URL string
     locationContent = {
@@ -59,16 +67,16 @@ export async function createLocationRecord(
     };
   }
 
-  const record: Record<string, unknown> = {
+  const record: AppCertifiedLocation.Record = {
     $type: "app.certified.location",
     lpVersion: params.lpVersion,
     srs: params.srs,
     locationType: params.locationType,
     location: locationContent,
     createdAt: new Date().toISOString(),
+    ...(params.name ? { name: params.name } : {}),
+    ...(params.description ? { description: params.description } : {}),
   };
-  if (params.name) record.name = params.name;
-  if (params.description) record.description = params.description;
 
   const result = await agent.com.atproto.repo.createRecord({
     repo: did,
