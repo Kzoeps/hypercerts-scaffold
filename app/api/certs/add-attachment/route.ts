@@ -5,7 +5,11 @@ import {
   uploadContentBlob,
   type LocationCreateParams,
 } from "@/lib/atproto-writes";
-import { getStringField, parseAtUri } from "@/lib/utils";
+import {
+  getStringField,
+  parseAtUri,
+  stringToLinearDocument,
+} from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import {
   OrgHypercertsContextAttachment as OrgHypercertsClaimAttachment,
@@ -182,7 +186,9 @@ export async function POST(req: NextRequest) {
       title,
       createdAt: new Date().toISOString(),
       ...(shortDescription ? { shortDescription } : {}),
-      ...(description ? { description } : {}),
+      ...(description
+        ? { description: stringToLinearDocument(description) }
+        : {}),
       ...(contentType ? { contentType } : {}),
       ...(locationRef ? { location: locationRef } : {}),
     };

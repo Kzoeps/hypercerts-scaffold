@@ -1,7 +1,7 @@
 "use client";
 
 import { URILink } from "./uri-link";
-import { getPDSlsURI } from "@/lib/utils";
+import { getPDSlsURI, linearDocumentToString } from "@/lib/utils";
 
 import dynamic from "next/dynamic";
 import type { OrgHypercertsClaimActivity as HypercertClaim } from "@hypercerts-org/lexicon";
@@ -226,7 +226,7 @@ export default function HypercertDetailsView({
               Description
             </h2>
             <p className="text-muted-foreground font-[family-name:var(--font-outfit)] text-sm leading-relaxed whitespace-pre-wrap">
-              {record.description}
+              {linearDocumentToString(record.description)}
             </p>
           </div>
         </div>

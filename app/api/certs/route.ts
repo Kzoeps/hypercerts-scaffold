@@ -1,6 +1,10 @@
 import { getRepoContext } from "@/lib/repo-context";
 import { uploadContentBlob } from "@/lib/atproto-writes";
-import { parseAtUri, getStringField } from "@/lib/utils";
+import {
+  parseAtUri,
+  getStringField,
+  stringToLinearDocument,
+} from "@/lib/utils";
 import { assertValidRecord } from "@/lib/record-validation";
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -134,7 +138,9 @@ export async function POST(req: NextRequest) {
       $type: "org.hypercerts.claim.activity",
       title: hypercertParams.title,
       shortDescription: hypercertParams.shortDescription,
-      description: hypercertParams.description,
+      description: hypercertParams.description
+        ? stringToLinearDocument(hypercertParams.description)
+        : undefined,
       startDate: hypercertParams.startDate,
       endDate: hypercertParams.endDate,
       rights: rightsRef,
@@ -238,7 +244,8 @@ export async function PUT(req: NextRequest) {
     const updates: Record<string, unknown> = {};
     if (title !== null) updates.title = title;
     if (shortDescription !== null) updates.shortDescription = shortDescription;
-    if (description !== null) updates.description = description;
+    if (description !== null)
+      updates.description = stringToLinearDocument(description);
     if (startDate !== null && startDate !== "null")
       updates.startDate = startDate;
     if (endDate !== null && endDate !== "null") updates.endDate = endDate;
