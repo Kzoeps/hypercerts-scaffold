@@ -1,6 +1,7 @@
 import { getRepoContext } from "@/lib/repo-context";
 import { uploadContentBlob } from "@/lib/atproto-writes";
 import { parseAtUri, getStringField } from "@/lib/utils";
+import { assertValidRecord } from "@/lib/record-validation";
 import { NextRequest, NextResponse } from "next/server";
 import {
   OrgHypercertsClaimRights,
@@ -106,6 +107,18 @@ export async function POST(req: NextRequest) {
       rightsDescription: hypercertParams.rights?.rightsDescription ?? "",
       createdAt: new Date().toISOString(),
     };
+    try {
+      assertValidRecord(
+        "rights",
+        rightsRecord,
+        OrgHypercertsClaimRights.validateRecord,
+      );
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Validation failed" },
+        { status: 400 },
+      );
+    }
     const rightsResult = await ctx.agent.com.atproto.repo.createRecord({
       repo: ctx.activeDid,
       collection: "org.hypercerts.claim.rights",
@@ -130,6 +143,18 @@ export async function POST(req: NextRequest) {
     };
 
     // 4. Create the claim record (PDS generates TID rkey)
+    try {
+      assertValidRecord(
+        "activity",
+        claimRecord,
+        OrgHypercertsClaimActivity.validateRecord,
+      );
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Validation failed" },
+        { status: 400 },
+      );
+    }
     const claimResult = await ctx.agent.com.atproto.repo.createRecord({
       repo: ctx.activeDid,
       collection: "org.hypercerts.claim.activity",
@@ -248,6 +273,18 @@ export async function PUT(req: NextRequest) {
     }
     // else image === undefined → preserve existing (already in spread)
 
+    try {
+      assertValidRecord(
+        "activity",
+        record,
+        OrgHypercertsClaimActivity.validateRecord,
+      );
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Validation failed" },
+        { status: 400 },
+      );
+    }
     const result = await ctx.agent.com.atproto.repo.putRecord({
       repo: ctx.activeDid,
       collection: parsed.collection || "org.hypercerts.claim.activity",
