@@ -111,15 +111,6 @@ export interface CertifiedActorProfile {
   [k: string]: unknown;
 }
 
-/** Shape of app.bsky.actor.profile record value from getRecord() */
-export interface BskyActorProfile {
-  displayName?: string;
-  description?: string;
-  avatar?: BlobRef;
-  banner?: BlobRef;
-  [k: string]: unknown;
-}
-
 export function isRecordObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }

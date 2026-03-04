@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAgent } from "@/lib/atproto-session";
 import { revalidatePath } from "next/cache";
-import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
-import { getSession } from "@/lib/atproto-session";
-import { resolveSessionPds } from "@/lib/server-utils";
-import type { BskyActorProfile } from "@/lib/types";
+import type { AppBskyActorProfile } from "@atproto/api";
 
 export async function POST(req: Request) {
   try {
@@ -43,7 +40,8 @@ export async function POST(req: Request) {
       })
       .catch(() => null);
     const existingProfile =
-      (existingResult?.data?.value as BskyActorProfile | undefined) ?? null;
+      (existingResult?.data?.value as AppBskyActorProfile.Record | undefined) ??
+      null;
 
     // If no profile record exists yet, create it; otherwise update
     if (existingProfile === null) {
@@ -113,34 +111,18 @@ export async function POST(req: Request) {
     }
     revalidatePath("/bsky-profile");
 
-    const updatedResult = await repo.com.atproto.repo
-      .getRecord({
-        repo: repo.assertDid,
-        collection: "app.bsky.actor.profile",
-        rkey: "self",
-      })
+    const updatedResult = await repo
+      .getProfile({ actor: repo.assertDid })
       .catch(() => null);
-    const updated = updatedResult?.data?.value as BskyActorProfile | undefined;
-
-    // Convert BlobRef objects to URLs, then to CDN URLs
-    const session = await getSession();
-    const pdsUrl = session ? await resolveSessionPds(session) : undefined;
-    const avatarUrl =
-      convertBlobUrlToCdn(
-        getBlobURL(updated?.avatar, repo.assertDid, pdsUrl),
-      ) || "";
-    const bannerUrl =
-      convertBlobUrlToCdn(
-        getBlobURL(updated?.banner, repo.assertDid, pdsUrl),
-      ) || "";
+    const updated = updatedResult?.data;
 
     return NextResponse.json({
       ok: true,
       profile: {
         displayName: updated?.displayName || "",
         description: updated?.description || "",
-        avatar: avatarUrl,
-        banner: bannerUrl,
+        avatar: updated?.avatar || "",
+        banner: updated?.banner || "",
       },
     });
   } catch (error) {

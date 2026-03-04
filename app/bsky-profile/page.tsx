@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getAgent, getSession } from "@/lib/atproto-session";
-import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
-import { resolveSessionPds } from "@/lib/server-utils";
+import { getAgent } from "@/lib/atproto-session";
 import BskyProfileForm from "@/components/bsky-profile-form";
 import { UserCircle } from "lucide-react";
-import type { BskyActorProfile } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Bsky Profile",
@@ -20,23 +17,13 @@ export const metadata: Metadata = {
 export default async function BskyProfilePage() {
   const repo = await getAgent();
   if (!repo) redirect("/");
-  const profileResult = await repo.com.atproto.repo
-    .getRecord({
-      repo: repo.assertDid,
-      collection: "app.bsky.actor.profile",
-      rkey: "self",
-    })
+  const profileResult = await repo
+    .getProfile({ actor: repo.assertDid })
     .catch(() => null);
-  const profile = profileResult?.data?.value as BskyActorProfile | undefined;
+  const profile = profileResult?.data;
 
-  const session = await getSession();
-  const pdsUrl = session ? await resolveSessionPds(session) : undefined;
-  const avatarUrl =
-    convertBlobUrlToCdn(getBlobURL(profile?.avatar, repo.assertDid, pdsUrl)) ||
-    "";
-  const bannerUrl =
-    convertBlobUrlToCdn(getBlobURL(profile?.banner, repo.assertDid, pdsUrl)) ||
-    "";
+  const avatarUrl = profile?.avatar ?? "";
+  const bannerUrl = profile?.banner ?? "";
 
   return (
     <div className="noise-bg relative min-h-screen">
