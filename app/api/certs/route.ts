@@ -228,10 +228,9 @@ export async function PUT(req: NextRequest) {
     if (title !== null) updates.title = title;
     if (shortDescription !== null) updates.shortDescription = shortDescription;
     if (description !== null) updates.description = description;
-    if (startDate === "null") updates.startDate = null;
-    else if (startDate !== null) updates.startDate = startDate;
-    if (endDate === "null") updates.endDate = null;
-    else if (endDate !== null) updates.endDate = endDate;
+    if (startDate !== null && startDate !== "null")
+      updates.startDate = startDate;
+    if (endDate !== null && endDate !== "null") updates.endDate = endDate;
 
     // Handle image: File = new image, string "null" = remove, absent = no change
     let image: Blob | null | undefined;
@@ -258,6 +257,10 @@ export async function PUT(req: NextRequest) {
       createdAt: existing.createdAt, // immutable
       rights: existing.rights, // immutable
     };
+
+    // Remove optional fields that were explicitly cleared (lexicon rejects null for non-nullable string fields)
+    if (startDate === "null") delete record.startDate;
+    if (endDate === "null") delete record.endDate;
 
     // Handle image
     if (image === null) {
