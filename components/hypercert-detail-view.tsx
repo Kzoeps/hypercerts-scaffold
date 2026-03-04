@@ -4,7 +4,7 @@ import { URILink } from "./uri-link";
 import { getPDSlsURI } from "@/lib/utils";
 
 import dynamic from "next/dynamic";
-import type { HypercertClaim } from "@hypercerts-org/sdk-core";
+import type { OrgHypercertsClaimActivity as HypercertClaim } from "@hypercerts-org/lexicon";
 import {
   MeasurementsSectionSkeleton,
   EvidenceSectionSkeleton,
@@ -45,7 +45,7 @@ export default function HypercertDetailsView({
   isOwner,
 }: {
   hypercertUri: string;
-  record: HypercertClaim;
+  record: HypercertClaim.Record;
   imageUri?: string;
   isOwner?: boolean;
 }) {
