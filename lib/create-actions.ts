@@ -13,7 +13,9 @@ import {
   OrgHypercertsClaimContributorInformation,
   OrgHypercertsClaimEvaluation,
   OrgHypercertsClaimMeasurement,
+  OrgHypercertsClaimActivity,
 } from "@hypercerts-org/lexicon";
+import { assertValidRecord } from "@/lib/record-validation";
 
 export type RepositoryRole = "admin" | "writer" | "reader";
 import { cookies } from "next/headers";
@@ -122,6 +124,11 @@ export const addContribution = async (params: {
       : {}),
   };
 
+  assertValidRecord(
+    "contributionDetails",
+    detailsRecord,
+    OrgHypercertsClaimContributionDetails.validateRecord,
+  );
   const detailsResult = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
     collection: "org.hypercerts.claim.contributionDetails",
@@ -140,6 +147,11 @@ export const addContribution = async (params: {
         identifier,
         createdAt: new Date().toISOString(),
       };
+      assertValidRecord(
+        "contributorInformation",
+        infoRecord,
+        OrgHypercertsClaimContributorInformation.validateRecord,
+      );
       const infoResult = await ctx.agent.com.atproto.repo.createRecord({
         repo: ctx.activeDid,
         collection: "org.hypercerts.claim.contributorInformation",
@@ -178,6 +190,11 @@ export const addContribution = async (params: {
   existingRecord.contributors = [...existingContributors, ...newContributors];
 
   // 4. Update hypercert with appended contributors
+  assertValidRecord(
+    "activity",
+    existingRecord,
+    OrgHypercertsClaimActivity.validateRecord,
+  );
   const updateResult = await ctx.agent.com.atproto.repo.putRecord({
     repo: ctx.activeDid,
     collection: hypercertParsed.collection || "org.hypercerts.claim.activity",
@@ -243,6 +260,11 @@ export const addEvaluation = async (params: {
       : {}),
   };
 
+  assertValidRecord(
+    "evaluation",
+    record,
+    OrgHypercertsClaimEvaluation.validateRecord,
+  );
   const result = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
     collection: "org.hypercerts.claim.evaluation",
@@ -321,6 +343,11 @@ export const addMeasurement = async (params: {
     ...(locationRefs?.length ? { locations: locationRefs } : {}),
   };
 
+  assertValidRecord(
+    "measurement",
+    record,
+    OrgHypercertsClaimMeasurement.validateRecord,
+  );
   const result = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
     collection: "org.hypercerts.claim.measurement",
@@ -519,6 +546,11 @@ export const updateMeasurement = async (params: {
     record.measurers = updates.measurers.map((did) => ({ did }));
   }
 
+  assertValidRecord(
+    "measurement",
+    record,
+    OrgHypercertsClaimMeasurement.validateRecord,
+  );
   const result = await ctx.agent.com.atproto.repo.putRecord({
     repo: ctx.activeDid,
     collection: parsed.collection || "org.hypercerts.claim.measurement",
