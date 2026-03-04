@@ -15,7 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Award, Calendar, Plus, FileText } from "lucide-react";
-import { OrgHypercertsDefs } from "@hypercerts-org/sdk-core";
+import { OrgHypercertsDefs } from "@hypercerts-org/lexicon";
 
 export const metadata: Metadata = {
   title: "Hypercerts",

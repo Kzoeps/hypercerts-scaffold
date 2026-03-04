@@ -71,7 +71,12 @@ export interface CreateHypercertParams {
     >;
     contributionDetails:
       | string
-      | { role: string }
+      | {
+          role: string;
+          contributionDescription?: string;
+          startDate?: string;
+          endDate?: string;
+        }
       | { uri: string; cid: string };
     weight?: string;
   }>;

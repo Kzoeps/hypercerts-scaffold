@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { OrgHypercertsClaimActivity as Hypercert } from "@hypercerts-org/sdk-core";
-import type { CreateHypercertParams } from "@hypercerts-org/sdk-core";
+import { OrgHypercertsClaimActivity as Hypercert } from "@hypercerts-org/lexicon";
+import type { CreateHypercertParams } from "@/lib/types";
 import { Label } from "@radix-ui/react-label";
 import {
   PlusIcon,
