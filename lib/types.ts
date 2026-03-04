@@ -4,6 +4,7 @@ import type { OrgHypercertsClaimAttachment as HypercertEvidence } from "@hyperce
 import type { OrgHypercertsClaimRights as HypercertRights } from "@hypercerts-org/lexicon";
 import type { AppCertifiedLocation as HypercertLocation } from "@hypercerts-org/lexicon";
 import type { ComAtprotoRepoGetRecord } from "@atproto/api";
+import type { BlobRef } from "@atproto/lexicon";
 
 export type HypercertEvidenceData = Omit<
   ComAtprotoRepoGetRecord.OutputSchema,
@@ -59,9 +60,9 @@ export interface CreateHypercertParams {
   startDate: string;
   endDate: string;
   rights: {
-    name: string;
-    type: string;
-    description: string;
+    rightsName: string;
+    rightsType: string;
+    rightsDescription: string;
   };
   workScope?: string | { uri: string; cid: string };
   image?: Blob;
@@ -96,4 +97,29 @@ export enum Collections {
   location = "app.certified.location",
   rights = "org.hypercerts.claim.rights",
   evaluation = "org.hypercerts.claim.evaluation",
+}
+
+/** Shape of app.certified.actor.profile record value from getRecord() */
+export interface CertifiedActorProfile {
+  displayName?: string;
+  description?: string;
+  pronouns?: string;
+  website?: string;
+  handle?: string;
+  avatar?: BlobRef;
+  banner?: BlobRef;
+  [k: string]: unknown;
+}
+
+/** Shape of app.bsky.actor.profile record value from getRecord() */
+export interface BskyActorProfile {
+  displayName?: string;
+  description?: string;
+  avatar?: BlobRef;
+  banner?: BlobRef;
+  [k: string]: unknown;
+}
+
+export function isRecordObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
 }

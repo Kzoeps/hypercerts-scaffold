@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAgent, getSession } from "@/lib/atproto-session";
-import { getBlobURL } from "@/lib/utils";
+import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
 import { resolveSessionPds } from "@/lib/server-utils";
 import BskyProfileForm from "@/components/bsky-profile-form";
 import { UserCircle } from "lucide-react";
+import type { BskyActorProfile } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Bsky Profile",
@@ -26,23 +27,16 @@ export default async function BskyProfilePage() {
       rkey: "self",
     })
     .catch(() => null);
-  const profile =
-    (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
+  const profile = profileResult?.data?.value as BskyActorProfile | undefined;
 
   const session = await getSession();
   const pdsUrl = session ? await resolveSessionPds(session) : undefined;
   const avatarUrl =
-    getBlobURL(
-      profile?.avatar as Parameters<typeof getBlobURL>[0],
-      repo.assertDid,
-      pdsUrl,
-    ) || "";
+    convertBlobUrlToCdn(getBlobURL(profile?.avatar, repo.assertDid, pdsUrl)) ||
+    "";
   const bannerUrl =
-    getBlobURL(
-      profile?.banner as Parameters<typeof getBlobURL>[0],
-      repo.assertDid,
-      pdsUrl,
-    ) || "";
+    convertBlobUrlToCdn(getBlobURL(profile?.banner, repo.assertDid, pdsUrl)) ||
+    "";
 
   return (
     <div className="noise-bg relative min-h-screen">
@@ -71,8 +65,8 @@ export default async function BskyProfilePage() {
         <main className="animate-fade-in-up max-w-2xl">
           <BskyProfileForm
             initialProfile={{
-              displayName: (profile?.displayName as string | undefined) || "",
-              description: (profile?.description as string | undefined) || "",
+              displayName: profile?.displayName || "",
+              description: profile?.description || "",
               avatarUrl,
               bannerUrl,
             }}

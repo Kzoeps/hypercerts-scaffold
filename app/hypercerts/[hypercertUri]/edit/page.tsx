@@ -10,7 +10,6 @@ import {
   OrgHypercertsDefs,
   OrgHypercertsClaimActivity,
 } from "@hypercerts-org/lexicon";
-type HypercertClaim = OrgHypercertsClaimActivity.Main;
 import HypercertsEditForm from "@/components/hypercerts-edit-form";
 
 export default async function EditHypercertPage({
@@ -76,10 +75,8 @@ export default async function EditHypercertPage({
         })
         .catch(() => null)
     : null;
-  const cert = certResult
-    ? { record: certResult.data.value as Record<string, unknown> }
-    : null;
-  if (!cert?.record)
+  const rawValue = certResult?.data.value;
+  if (!OrgHypercertsClaimActivity.isRecord(rawValue))
     return (
       <main className="noise-bg relative min-h-screen">
         <div className="gradient-mesh absolute inset-0 -z-10" />
@@ -109,8 +106,9 @@ export default async function EditHypercertPage({
       </main>
     );
 
+  const certRecord = rawValue as OrgHypercertsClaimActivity.Record;
   let imageUri: string | undefined;
-  const { image, ...certWithoutImage } = cert.record;
+  const { image, ...certWithoutImage } = certRecord;
 
   if (image && session) {
     const pdsUrl = await resolveSessionPds(session);
@@ -149,7 +147,7 @@ export default async function EditHypercertPage({
         <div className="animate-fade-in-up">
           <HypercertsEditForm
             hypercertUri={decodedUri}
-            record={certWithoutImage as unknown as HypercertClaim}
+            record={certWithoutImage}
             imageUri={imageUri}
           />
         </div>

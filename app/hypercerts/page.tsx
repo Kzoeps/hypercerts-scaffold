@@ -15,7 +15,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Award, Calendar, Plus, FileText } from "lucide-react";
-import { OrgHypercertsDefs } from "@hypercerts-org/lexicon";
+import {
+  OrgHypercertsDefs,
+  OrgHypercertsClaimActivity,
+} from "@hypercerts-org/lexicon";
 
 export const metadata: Metadata = {
   title: "Hypercerts",
@@ -41,11 +44,12 @@ export default async function MyHypercertsPage() {
   ]);
 
   // listRecords returns { data: { records: Array<{ uri, cid, value }> } }
-  const records = hypercertsResult.data.records.map((r) => ({
-    uri: r.uri,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    record: r.value as any,
-  }));
+  const records = hypercertsResult.data.records
+    .filter((r) => OrgHypercertsClaimActivity.isRecord(r.value))
+    .map((r) => ({
+      uri: r.uri,
+      record: r.value as OrgHypercertsClaimActivity.Record,
+    }));
 
   return (
     <main className="noise-bg relative min-h-screen">

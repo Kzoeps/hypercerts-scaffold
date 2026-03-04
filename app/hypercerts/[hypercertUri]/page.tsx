@@ -11,7 +11,6 @@ import {
   OrgHypercertsDefs,
   OrgHypercertsClaimActivity,
 } from "@hypercerts-org/lexicon";
-type HypercertClaim = OrgHypercertsClaimActivity.Main;
 
 export async function generateMetadata({
   params,
@@ -42,17 +41,15 @@ export async function generateMetadata({
           })
           .catch(() => null)
       : null;
-    const cert = certResult
-      ? { record: certResult.data.value as Record<string, unknown> }
-      : null;
-    if (!cert?.record) {
+    const rawValue = certResult?.data.value;
+    if (!OrgHypercertsClaimActivity.isRecord(rawValue)) {
       return { title: "Hypercert Not Found" };
     }
+    const certRecord = rawValue as OrgHypercertsClaimActivity.Record;
 
-    const title = (cert.record.title as string) || "Hypercert";
+    const title = certRecord.title || "Hypercert";
     const description =
-      (cert.record.shortDescription as string) ||
-      "View this hypercert impact claim.";
+      certRecord.shortDescription || "View this hypercert impact claim.";
 
     return {
       title,
@@ -150,10 +147,8 @@ export default async function HypercertViewPage({
         })
         .catch(() => null)
     : null;
-  const cert = certResult
-    ? { record: certResult.data.value as Record<string, unknown> }
-    : null;
-  if (!cert?.record)
+  const rawValue = certResult?.data.value;
+  if (!OrgHypercertsClaimActivity.isRecord(rawValue))
     return (
       <main className="noise-bg relative min-h-screen">
         <div className="gradient-mesh absolute inset-0 -z-10" />
@@ -183,19 +178,19 @@ export default async function HypercertViewPage({
       </main>
     );
 
+  const certRecord = rawValue as OrgHypercertsClaimActivity.Record;
   let imageUri: string | undefined;
-  const { image, ...certWithoutImage } = cert.record;
+  const { image, ...certWithoutImage } = certRecord;
 
   if (image && session) {
     const pdsUrl = await resolveSessionPds(session);
 
-    // TODO: check for uri and image types. for now we will assume its a small iamge
+    // TODO: check for uri and image types. for now we will assume its a small image
     imageUri = getBlobURL(
       (image as OrgHypercertsDefs.SmallImage).image,
       ownerDid,
       pdsUrl,
     );
-    console.log(imageUri);
   }
 
   const isOwner = Boolean(session?.did && ownerDid && session.did === ownerDid);
@@ -222,7 +217,7 @@ export default async function HypercertViewPage({
 
         <HypercertDetailsView
           hypercertUri={decodedUri}
-          record={certWithoutImage as unknown as HypercertClaim}
+          record={certWithoutImage}
           imageUri={imageUri}
           isOwner={isOwner}
         />

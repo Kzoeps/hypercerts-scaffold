@@ -7,6 +7,13 @@ import {
   processLocations,
   type StrongRef,
 } from "./atproto-writes";
+import type { CertifiedActorProfile } from "@/lib/types";
+import {
+  OrgHypercertsClaimContributionDetails,
+  OrgHypercertsClaimContributorInformation,
+  OrgHypercertsClaimEvaluation,
+  OrgHypercertsClaimMeasurement,
+} from "@hypercerts-org/lexicon";
 
 export type RepositoryRole = "admin" | "writer" | "reader";
 import { cookies } from "next/headers";
@@ -18,29 +25,42 @@ export interface GrantAccessParams {
   userDid: string;
   role: RepositoryRole;
 }
-export const getActiveProfileInfo = async () => {
-  const ctx = await getRepoContext();
-  if (!ctx) return null;
 
-  const profileResult = await ctx.agent.com.atproto.repo
-    .getRecord({
-      repo: ctx.targetDid,
-      collection: "app.certified.actor.profile",
-      rkey: "self",
-    })
-    .catch(() => null);
-  const profile =
-    (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
-  if (!profile) return null;
-  return {
-    name:
-      (profile.displayName as string | undefined) ||
-      (profile.handle as string | undefined),
-    handle: profile.handle as string | undefined,
-    isOrganization: false,
+export interface ActiveProfileInfo {
+  name: string | undefined;
+  handle: string | undefined;
+  isOrganization: boolean;
+}
+
+export interface SerializedRecord {
+  uri: string;
+  cid: string;
+  value: Record<string, unknown>;
+}
+
+export const getActiveProfileInfo =
+  async (): Promise<ActiveProfileInfo | null> => {
+    const ctx = await getRepoContext();
+    if (!ctx) return null;
+
+    const profileResult = await ctx.agent.com.atproto.repo
+      .getRecord({
+        repo: ctx.targetDid,
+        collection: "app.certified.actor.profile",
+        rkey: "self",
+      })
+      .catch(() => null);
+    const profile = profileResult?.data?.value as
+      | CertifiedActorProfile
+      | undefined;
+    if (!profile) return null;
+    return {
+      name: profile.displayName || profile.handle,
+      handle: profile.handle,
+      isOrganization: false,
+    };
   };
-};
-export const switchActiveProfile = async (did: string) => {
+export const switchActiveProfile = async (did: string): Promise<void> => {
   const cookiePromise = cookies();
   const session = await getSession();
   if (!session) {
@@ -58,7 +78,7 @@ export const switchActiveProfile = async (did: string) => {
   });
 };
 
-export const logout = async () => {
+export const logout = async (): Promise<void> => {
   const session = await getSession();
   if (!session) {
     return;
@@ -75,7 +95,7 @@ export const addContribution = async (params: {
     startDate?: string;
     endDate?: string;
   };
-}) => {
+}): Promise<{ uri: string; cid: string }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -84,19 +104,23 @@ export const addContribution = async (params: {
   }
 
   // 1. Create contributionDetails record
-  const detailsRecord: Record<string, unknown> = {
+  const detailsRecord: OrgHypercertsClaimContributionDetails.Record = {
     $type: "org.hypercerts.claim.contributionDetails",
     role: params.contributionDetails.role,
     createdAt: new Date().toISOString(),
+    ...(params.contributionDetails.contributionDescription
+      ? {
+          contributionDescription:
+            params.contributionDetails.contributionDescription,
+        }
+      : {}),
+    ...(params.contributionDetails.startDate
+      ? { startDate: params.contributionDetails.startDate }
+      : {}),
+    ...(params.contributionDetails.endDate
+      ? { endDate: params.contributionDetails.endDate }
+      : {}),
   };
-  if (params.contributionDetails.contributionDescription) {
-    detailsRecord.contributionDescription =
-      params.contributionDetails.contributionDescription;
-  }
-  if (params.contributionDetails.startDate)
-    detailsRecord.startDate = params.contributionDetails.startDate;
-  if (params.contributionDetails.endDate)
-    detailsRecord.endDate = params.contributionDetails.endDate;
 
   const detailsResult = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
@@ -111,7 +135,7 @@ export const addContribution = async (params: {
   // 2. Create contributorInformation records for each contributor
   const contributorRefs = await Promise.all(
     params.contributors.map(async (identifier) => {
-      const infoRecord: Record<string, unknown> = {
+      const infoRecord: OrgHypercertsClaimContributorInformation.Record = {
         $type: "org.hypercerts.claim.contributorInformation",
         identifier,
         createdAt: new Date().toISOString(),
@@ -172,7 +196,7 @@ export const addEvaluation = async (params: {
   content?: string[];
   measurements?: string[];
   location?: string;
-}) => {
+}): Promise<{ uri: string; cid: string }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -189,18 +213,35 @@ export const addEvaluation = async (params: {
     "org.hypercerts.claim.activity",
   );
 
-  const record: Record<string, unknown> = {
+  const record: OrgHypercertsClaimEvaluation.Record = {
     $type: "org.hypercerts.claim.evaluation",
     subject,
     evaluators: evaluationData.evaluators.map((did) => ({ did })),
     summary: evaluationData.summary,
     createdAt: new Date().toISOString(),
+    ...(evaluationData.score ? { score: evaluationData.score } : {}),
+    ...(evaluationData.content
+      ? {
+          content: evaluationData.content.map((uri) => ({
+            $type: "org.hypercerts.defs#uri" as const,
+            uri,
+          })),
+        }
+      : {}),
+    // measurements and location are passed as-is (AT-URIs); the index signature accepts them
+    ...(evaluationData.measurements
+      ? {
+          measurements:
+            evaluationData.measurements as unknown as OrgHypercertsClaimEvaluation.Record["measurements"],
+        }
+      : {}),
+    ...(evaluationData.location
+      ? {
+          location:
+            evaluationData.location as unknown as OrgHypercertsClaimEvaluation.Record["location"],
+        }
+      : {}),
   };
-  if (evaluationData.score) record.score = evaluationData.score;
-  if (evaluationData.content) record.content = evaluationData.content;
-  if (evaluationData.measurements)
-    record.measurements = evaluationData.measurements;
-  if (evaluationData.location) record.location = evaluationData.location;
 
   const result = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
@@ -236,7 +277,7 @@ export const addMeasurement = async (params: {
   evidenceURI?: string[];
   locations?: MeasurementLocationParam[];
   comment?: string;
-}) => {
+}): Promise<{ uri: string; cid: string }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -261,23 +302,24 @@ export const addMeasurement = async (params: {
     );
   }
 
-  const record: Record<string, unknown> = {
+  const record: OrgHypercertsClaimMeasurement.Record = {
     $type: "org.hypercerts.claim.measurement",
     subject,
     metric: params.metric,
     value: params.value,
     unit: params.unit,
     createdAt: new Date().toISOString(),
+    ...(params.measurers?.length
+      ? { measurers: params.measurers.map((did) => ({ did })) }
+      : {}),
+    ...(params.startDate ? { startDate: params.startDate } : {}),
+    ...(params.endDate ? { endDate: params.endDate } : {}),
+    ...(params.methodType ? { methodType: params.methodType } : {}),
+    ...(params.methodURI ? { methodURI: params.methodURI } : {}),
+    ...(params.evidenceURI?.length ? { evidenceURI: params.evidenceURI } : {}),
+    ...(params.comment ? { comment: params.comment } : {}),
+    ...(locationRefs?.length ? { locations: locationRefs } : {}),
   };
-  if (params.measurers?.length)
-    record.measurers = params.measurers.map((did) => ({ did }));
-  if (params.startDate) record.startDate = params.startDate;
-  if (params.endDate) record.endDate = params.endDate;
-  if (params.methodType) record.methodType = params.methodType;
-  if (params.methodURI) record.methodURI = params.methodURI;
-  if (params.evidenceURI?.length) record.evidenceURI = params.evidenceURI;
-  if (params.comment) record.comment = params.comment;
-  if (locationRefs?.length) record.locations = locationRefs;
 
   const result = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
@@ -292,7 +334,7 @@ export const getMeasurementRecord = async (params: {
   did: string;
   collection: string;
   rkey: string;
-}) => {
+}): Promise<SerializedRecord> => {
   const { did, collection, rkey } = params;
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
@@ -310,14 +352,14 @@ export const getMeasurementRecord = async (params: {
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
-  return JSON.parse(JSON.stringify(data));
+  return JSON.parse(JSON.stringify(data)) as SerializedRecord;
 };
 
 export const getEvaluationRecord = async (params: {
   did: string;
   collection: string;
   rkey: string;
-}) => {
+}): Promise<SerializedRecord> => {
   const { did, collection, rkey } = params;
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
@@ -335,14 +377,14 @@ export const getEvaluationRecord = async (params: {
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
-  return JSON.parse(JSON.stringify(data));
+  return JSON.parse(JSON.stringify(data)) as SerializedRecord;
 };
 
 export const getEvidenceRecord = async (params: {
   did: string;
   collection: string;
   rkey: string;
-}) => {
+}): Promise<SerializedRecord> => {
   const { did, collection, rkey } = params;
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
@@ -360,14 +402,14 @@ export const getEvidenceRecord = async (params: {
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
-  return JSON.parse(JSON.stringify(data));
+  return JSON.parse(JSON.stringify(data)) as SerializedRecord;
 };
 
 export const getContributorInformationRecord = async (params: {
   did: string;
   collection: string;
   rkey: string;
-}) => {
+}): Promise<SerializedRecord> => {
   const { did, collection, rkey } = params;
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
@@ -384,10 +426,12 @@ export const getContributorInformationRecord = async (params: {
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
-  return JSON.parse(JSON.stringify(data));
+  return JSON.parse(JSON.stringify(data)) as SerializedRecord;
 };
 
-export const deleteHypercert = async (params: { hypercertUri: string }) => {
+export const deleteHypercert = async (params: {
+  hypercertUri: string;
+}): Promise<{ success: true }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -425,7 +469,7 @@ export const updateMeasurement = async (params: {
     evidenceURI?: string[];
     comment?: string;
   };
-}) => {
+}): Promise<{ uri: string; cid: string }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -450,10 +494,11 @@ export const updateMeasurement = async (params: {
     collection: parsed.collection || "org.hypercerts.claim.measurement",
     rkey: parsed.rkey,
   });
-  const existing = existingResult.data.value as Record<string, unknown>;
+  const existing = existingResult.data
+    .value as OrgHypercertsClaimMeasurement.Record;
 
   // Merge updates, preserving immutable fields
-  const record: Record<string, unknown> = {
+  const record: OrgHypercertsClaimMeasurement.Record = {
     ...existing,
     $type: "org.hypercerts.claim.measurement",
   };
@@ -484,7 +529,9 @@ export const updateMeasurement = async (params: {
   return { uri: result.data.uri, cid: result.data.cid };
 };
 
-export const deleteRecord = async (params: { recordUri: string }) => {
+export const deleteRecord = async (params: {
+  recordUri: string;
+}): Promise<{ success: true }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(

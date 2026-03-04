@@ -1,7 +1,12 @@
 import { getRepoContext } from "@/lib/repo-context";
 import { uploadContentBlob } from "@/lib/atproto-writes";
-import { parseAtUri } from "@/lib/utils";
+import { parseAtUri, getStringField } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  OrgHypercertsClaimRights,
+  OrgHypercertsClaimActivity,
+  OrgHypercertsDefs,
+} from "@hypercerts-org/lexicon";
 
 interface HypercertRights {
   rightsName?: string;
@@ -25,15 +30,15 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const ctxPromise = getRepoContext();
-    const title = formData.get("title") as string | null;
-    const shortDescription = formData.get("shortDescription") as string | null;
-    const description = formData.get("description") as string | null;
-    const startDate = formData.get("startDate") as string | null;
-    const endDate = formData.get("endDate") as string | null;
-    const rightsRaw = formData.get("rights") as string | null;
+    const title = getStringField(formData, "title");
+    const shortDescription = getStringField(formData, "shortDescription");
+    const description = getStringField(formData, "description");
+    const startDate = getStringField(formData, "startDate");
+    const endDate = getStringField(formData, "endDate");
+    const rightsRaw = getStringField(formData, "rights");
     // TODO map to proper workscope
-    // // const workScopeRaw = formData.get("workScope") as string | null;
-    const contributionsRaw = formData.get("contributions") as string | null;
+    // // const workScopeRaw = getStringField(formData, "workScope");
+    const contributionsRaw = getStringField(formData, "contributions");
 
     const image = formData.get("image") as File | null;
 
@@ -83,26 +88,24 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Upload image if provided
-    let imageField: Record<string, unknown> | undefined;
+    let imageField:
+      | (OrgHypercertsDefs.SmallImage & {
+          $type: "org.hypercerts.defs#smallImage";
+        })
+      | undefined;
     if (hypercertParams.image) {
       const blobRef = await uploadContentBlob(ctx.agent, hypercertParams.image);
       imageField = { $type: "org.hypercerts.defs#smallImage", image: blobRef };
     }
 
     // 2. Create rights record
-    const rightsRecord: Record<string, unknown> = {
+    const rightsRecord: OrgHypercertsClaimRights.Record = {
       $type: "org.hypercerts.claim.rights",
+      rightsName: hypercertParams.rights?.rightsName ?? "",
+      rightsType: hypercertParams.rights?.rightsType ?? "",
+      rightsDescription: hypercertParams.rights?.rightsDescription ?? "",
       createdAt: new Date().toISOString(),
     };
-    if (hypercertParams.rights) {
-      if (hypercertParams.rights.rightsName)
-        rightsRecord.rightsName = hypercertParams.rights.rightsName;
-      if (hypercertParams.rights.rightsType)
-        rightsRecord.rightsType = hypercertParams.rights.rightsType;
-      if (hypercertParams.rights.rightsDescription)
-        rightsRecord.rightsDescription =
-          hypercertParams.rights.rightsDescription;
-    }
     const rightsResult = await ctx.agent.com.atproto.repo.createRecord({
       repo: ctx.activeDid,
       collection: "org.hypercerts.claim.rights",
@@ -114,7 +117,7 @@ export async function POST(req: NextRequest) {
     };
 
     // 3. Build the claim record
-    const claimRecord: Record<string, unknown> = {
+    const claimRecord: OrgHypercertsClaimActivity.Record = {
       $type: "org.hypercerts.claim.activity",
       title: hypercertParams.title,
       shortDescription: hypercertParams.shortDescription,
@@ -122,10 +125,9 @@ export async function POST(req: NextRequest) {
       startDate: hypercertParams.startDate,
       endDate: hypercertParams.endDate,
       rights: rightsRef,
-      workScope: hypercertParams.workScope || [],
       createdAt: new Date().toISOString(),
+      ...(imageField ? { image: imageField } : {}),
     };
-    if (imageField) claimRecord.image = imageField;
 
     // 4. Create the claim record (PDS generates TID rkey)
     const claimResult = await ctx.agent.com.atproto.repo.createRecord({
@@ -161,7 +163,7 @@ export async function PUT(req: NextRequest) {
   try {
     const formData = await req.formData();
     const ctxPromise = getRepoContext();
-    const hypercertUri = formData.get("hypercertUri") as string | null;
+    const hypercertUri = getStringField(formData, "hypercertUri");
 
     if (!hypercertUri) {
       return NextResponse.json(
@@ -170,11 +172,11 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const title = formData.get("title") as string | null;
-    const shortDescription = formData.get("shortDescription") as string | null;
-    const description = formData.get("description") as string | null;
-    const startDate = formData.get("startDate") as string | null;
-    const endDate = formData.get("endDate") as string | null;
+    const title = getStringField(formData, "title");
+    const shortDescription = getStringField(formData, "shortDescription");
+    const description = getStringField(formData, "description");
+    const startDate = getStringField(formData, "startDate");
+    const endDate = getStringField(formData, "endDate");
     const imageRaw = formData.get("image");
 
     const ctx = await ctxPromise;
@@ -220,10 +222,11 @@ export async function PUT(req: NextRequest) {
       collection: parsed.collection || "org.hypercerts.claim.activity",
       rkey: parsed.rkey,
     });
-    const existing = existingResult.data.value as Record<string, unknown>;
+    const existing = existingResult.data
+      .value as OrgHypercertsClaimActivity.Record;
 
     // Merge updates into existing, preserving immutable fields
-    const record: Record<string, unknown> = {
+    const record: OrgHypercertsClaimActivity.Record = {
       ...existing,
       ...updates,
       $type: "org.hypercerts.claim.activity",
