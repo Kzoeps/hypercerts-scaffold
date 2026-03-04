@@ -41,8 +41,7 @@ export async function POST(req: NextRequest) {
     const startDate = getStringField(formData, "startDate");
     const endDate = getStringField(formData, "endDate");
     const rightsRaw = getStringField(formData, "rights");
-    // TODO map to proper workscope
-    // // const workScopeRaw = getStringField(formData, "workScope");
+    const workScopeRaw = getStringField(formData, "workScope");
     const contributionsRaw = getStringField(formData, "contributions");
 
     const image = formData.get("image") as File | null;
@@ -73,11 +72,15 @@ export async function POST(req: NextRequest) {
       "contributions",
     );
 
+    const workScopeTags: string[] = workScopeRaw
+      ? JSON.parse(workScopeRaw)
+      : [];
+
     const hypercertParams: HypercertParams = {
       title,
       shortDescription,
       description: description ?? shortDescription,
-      // workScope,
+      workScope: workScopeTags.length > 0 ? workScopeTags : undefined,
       startDate,
       endDate,
       rights,
@@ -146,6 +149,14 @@ export async function POST(req: NextRequest) {
       rights: rightsRef,
       createdAt: new Date().toISOString(),
       ...(imageField ? { image: imageField } : {}),
+      ...(hypercertParams.workScope && hypercertParams.workScope.length > 0
+        ? {
+            workScope: {
+              $type: "org.hypercerts.claim.activity#workScopeString" as const,
+              scope: hypercertParams.workScope.join(", "),
+            },
+          }
+        : {}),
     };
 
     // 4. Create the claim record (PDS generates TID rkey)

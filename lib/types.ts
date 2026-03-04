@@ -64,7 +64,7 @@ export interface CreateHypercertParams {
     rightsType: string;
     rightsDescription: string;
   };
-  workScope?: string | { uri: string; cid: string };
+  workScope?: string[]; // tags as array of strings (converted to WorkScopeString at API level)
   image?: Blob;
   contributions?: Array<{
     contributors: Array<

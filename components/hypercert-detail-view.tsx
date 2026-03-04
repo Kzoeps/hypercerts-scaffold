@@ -5,6 +5,7 @@ import { getPDSlsURI, linearDocumentToString } from "@/lib/utils";
 
 import dynamic from "next/dynamic";
 import type { OrgHypercertsClaimActivity as HypercertClaim } from "@hypercerts-org/lexicon";
+import { OrgHypercertsClaimActivity } from "@hypercerts-org/lexicon";
 import {
   MeasurementsSectionSkeleton,
   EvidenceSectionSkeleton,
@@ -55,7 +56,16 @@ export default function HypercertDetailsView({
       router.push("/hypercerts");
     },
   });
-  const workScope = Array.isArray(record.workScope) ? record.workScope : [];
+  let workScope: string[] = [];
+  if (
+    record.workScope &&
+    OrgHypercertsClaimActivity.isWorkScopeString(record.workScope)
+  ) {
+    workScope = record.workScope.scope
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+  }
   const contributors = Array.isArray(record.contributors)
     ? record.contributors
     : undefined;

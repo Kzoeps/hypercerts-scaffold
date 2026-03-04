@@ -105,9 +105,16 @@ export default async function MyHypercertsPage() {
                       )
                     : null;
 
-                const workScope = Array.isArray(cert.workScope)
-                  ? cert.workScope
-                  : [];
+                let workScope: string[] = [];
+                if (
+                  cert.workScope &&
+                  OrgHypercertsClaimActivity.isWorkScopeString(cert.workScope)
+                ) {
+                  workScope = cert.workScope.scope
+                    .split(",")
+                    .map((s: string) => s.trim())
+                    .filter(Boolean);
+                }
                 const createdDate = cert.createdAt
                   ? new Date(cert.createdAt).toLocaleDateString()
                   : null;
