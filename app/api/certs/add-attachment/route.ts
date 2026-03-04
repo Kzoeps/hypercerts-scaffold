@@ -5,7 +5,7 @@ import {
   uploadContentBlob,
   type LocationCreateParams,
 } from "@/lib/atproto-writes";
-import { getStringField } from "@/lib/utils";
+import { getStringField, parseAtUri } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import {
   OrgHypercertsClaimAttachment,
@@ -156,6 +156,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Optionally create location record
     let locationRef: { uri: string; cid: string } | undefined;
+    let createdLocationRef: { uri: string; cid: string } | undefined;
     if (location) {
       if (typeof location === "string") {
         locationRef = await resolveStrongRef(
@@ -169,6 +170,7 @@ export async function POST(req: NextRequest) {
           ctx.activeDid,
           location as LocationCreateParams,
         );
+        createdLocationRef = locationRef;
       }
     }
 
@@ -191,20 +193,38 @@ export async function POST(req: NextRequest) {
         record,
         OrgHypercertsClaimAttachment.validateRecord,
       );
+
+      const result = await ctx.agent.com.atproto.repo.createRecord({
+        repo: ctx.activeDid,
+        collection: "org.hypercerts.claim.attachment",
+        record,
+      });
+
+      return NextResponse.json({ uri: result.data.uri, cid: result.data.cid });
     } catch (e) {
-      return NextResponse.json(
-        { error: e instanceof Error ? e.message : "Validation failed" },
-        { status: 400 },
-      );
+      // Best-effort: compensate orphaned location record if we created one
+      if (createdLocationRef) {
+        const parsed = parseAtUri(createdLocationRef.uri);
+        if (parsed) {
+          await ctx.agent.com.atproto.repo
+            .deleteRecord({
+              repo: ctx.activeDid,
+              collection: parsed.collection || "app.certified.location",
+              rkey: parsed.rkey,
+            })
+            .catch(() => undefined);
+        }
+      }
+
+      // Validation errors return 400; other errors re-throw
+      if (
+        e instanceof Error &&
+        e.message.startsWith("Invalid attachment record")
+      ) {
+        return NextResponse.json({ error: e.message }, { status: 400 });
+      }
+      throw e;
     }
-
-    const result = await ctx.agent.com.atproto.repo.createRecord({
-      repo: ctx.activeDid,
-      collection: "org.hypercerts.claim.attachment",
-      record,
-    });
-
-    return NextResponse.json({ uri: result.data.uri, cid: result.data.cid });
   } catch (e) {
     console.error("Error in add-attachment API:", e);
     return NextResponse.json(
