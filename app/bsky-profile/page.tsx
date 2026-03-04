@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAgent, getSession } from "@/lib/atproto-session";
-import { getBlobURL } from "@/lib/utils";
+import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
 import { resolveSessionPds } from "@/lib/server-utils";
 import BskyProfileForm from "@/components/bsky-profile-form";
 import { UserCircle } from "lucide-react";
@@ -31,8 +31,12 @@ export default async function BskyProfilePage() {
 
   const session = await getSession();
   const pdsUrl = session ? await resolveSessionPds(session) : undefined;
-  const avatarUrl = getBlobURL(profile?.avatar, repo.assertDid, pdsUrl) || "";
-  const bannerUrl = getBlobURL(profile?.banner, repo.assertDid, pdsUrl) || "";
+  const avatarUrl =
+    convertBlobUrlToCdn(getBlobURL(profile?.avatar, repo.assertDid, pdsUrl)) ||
+    "";
+  const bannerUrl =
+    convertBlobUrlToCdn(getBlobURL(profile?.banner, repo.assertDid, pdsUrl)) ||
+    "";
 
   return (
     <div className="noise-bg relative min-h-screen">
