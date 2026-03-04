@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
 import { getSession } from "@/lib/atproto-session";
 import { resolveSessionPds } from "@/lib/server-utils";
+import type { BskyActorProfile } from "@/lib/types";
 
 export async function POST(req: Request) {
   try {
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
       })
       .catch(() => null);
     const existingProfile =
-      (existingResult?.data?.value as Record<string, unknown> | null) ?? null;
+      (existingResult?.data?.value as BskyActorProfile | undefined) ?? null;
 
     // If no profile record exists yet, create it; otherwise update
     if (existingProfile === null) {
@@ -119,34 +120,25 @@ export async function POST(req: Request) {
         rkey: "self",
       })
       .catch(() => null);
-    const updated =
-      (updatedResult?.data?.value as Record<string, unknown> | null) ?? null;
+    const updated = updatedResult?.data?.value as BskyActorProfile | undefined;
 
     // Convert BlobRef objects to URLs, then to CDN URLs
     const session = await getSession();
     const pdsUrl = session ? await resolveSessionPds(session) : undefined;
     const avatarUrl =
       convertBlobUrlToCdn(
-        getBlobURL(
-          updated?.avatar as Parameters<typeof getBlobURL>[0],
-          repo.assertDid,
-          pdsUrl,
-        ),
+        getBlobURL(updated?.avatar, repo.assertDid, pdsUrl),
       ) || "";
     const bannerUrl =
       convertBlobUrlToCdn(
-        getBlobURL(
-          updated?.banner as Parameters<typeof getBlobURL>[0],
-          repo.assertDid,
-          pdsUrl,
-        ),
+        getBlobURL(updated?.banner, repo.assertDid, pdsUrl),
       ) || "";
 
     return NextResponse.json({
       ok: true,
       profile: {
-        displayName: (updated?.displayName as string | undefined) || "",
-        description: (updated?.description as string | undefined) || "",
+        displayName: updated?.displayName || "",
+        description: updated?.description || "",
         avatar: avatarUrl,
         banner: bannerUrl,
       },

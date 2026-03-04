@@ -5,6 +5,7 @@ import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
 import { resolveSessionPds } from "@/lib/server-utils";
 import { Suspense } from "react";
 import { AuthErrorToast } from "./AuthErrorToast";
+import type { CertifiedActorProfile } from "@/lib/types";
 
 export async function SignedInProvider({
   children,
@@ -26,17 +27,14 @@ export async function SignedInProvider({
           rkey: "self",
         })
         .catch(() => null);
-      const profile =
-        (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
+      const profile = profileResult?.data?.value as
+        | CertifiedActorProfile
+        | undefined;
 
       const pdsUrl = await resolveSessionPds(session);
-      const rawAvatarUrl = getBlobURL(
-        profile?.avatar as Parameters<typeof getBlobURL>[0],
-        agent.assertDid,
-        pdsUrl,
-      );
+      const rawAvatarUrl = getBlobURL(profile?.avatar, agent.assertDid, pdsUrl);
       avatarUrl = convertBlobUrlToCdn(rawAvatarUrl) || "";
-      handle = (profile?.handle as string | undefined) || "";
+      handle = profile?.handle || "";
     }
   }
 

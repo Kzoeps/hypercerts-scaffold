@@ -5,6 +5,7 @@ import ProfileForm from "@/components/profile-form";
 import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
 import { resolveSessionPds } from "@/lib/server-utils";
 import { UserCircle } from "lucide-react";
+import type { CertifiedActorProfile } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -26,27 +27,18 @@ export default async function ProfilePage() {
       rkey: "self",
     })
     .catch(() => null);
-  const profile =
-    (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
+  const profile = profileResult?.data?.value as
+    | CertifiedActorProfile
+    | undefined;
 
   const session = await getSession();
   const pdsUrl = session ? await resolveSessionPds(session) : undefined;
   const avatarUrl =
-    convertBlobUrlToCdn(
-      getBlobURL(
-        profile?.avatar as Parameters<typeof getBlobURL>[0],
-        repo.assertDid,
-        pdsUrl,
-      ),
-    ) || "";
+    convertBlobUrlToCdn(getBlobURL(profile?.avatar, repo.assertDid, pdsUrl)) ||
+    "";
   const bannerUrl =
-    convertBlobUrlToCdn(
-      getBlobURL(
-        profile?.banner as Parameters<typeof getBlobURL>[0],
-        repo.assertDid,
-        pdsUrl,
-      ),
-    ) || "";
+    convertBlobUrlToCdn(getBlobURL(profile?.banner, repo.assertDid, pdsUrl)) ||
+    "";
 
   return (
     <div className="noise-bg relative min-h-screen">
@@ -70,10 +62,10 @@ export default async function ProfilePage() {
         <main className="animate-fade-in-up max-w-2xl">
           <ProfileForm
             initialProfile={{
-              displayName: (profile?.displayName as string | undefined) || "",
-              description: (profile?.description as string | undefined) || "",
-              pronouns: (profile?.pronouns as string | undefined) || "",
-              website: (profile?.website as string | undefined) || "",
+              displayName: profile?.displayName || "",
+              description: profile?.description || "",
+              pronouns: profile?.pronouns || "",
+              website: profile?.website || "",
               avatarUrl,
               bannerUrl,
             }}

@@ -7,6 +7,7 @@ import {
   processLocations,
   type StrongRef,
 } from "./atproto-writes";
+import type { CertifiedActorProfile } from "@/lib/types";
 
 export type RepositoryRole = "admin" | "writer" | "reader";
 import { cookies } from "next/headers";
@@ -29,14 +30,13 @@ export const getActiveProfileInfo = async () => {
       rkey: "self",
     })
     .catch(() => null);
-  const profile =
-    (profileResult?.data?.value as Record<string, unknown> | null) ?? null;
+  const profile = profileResult?.data?.value as
+    | CertifiedActorProfile
+    | undefined;
   if (!profile) return null;
   return {
-    name:
-      (profile.displayName as string | undefined) ||
-      (profile.handle as string | undefined),
-    handle: profile.handle as string | undefined,
+    name: profile.displayName || profile.handle,
+    handle: profile.handle,
     isOrganization: false,
   };
 };
