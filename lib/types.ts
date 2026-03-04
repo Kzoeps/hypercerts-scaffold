@@ -59,9 +59,9 @@ export interface CreateHypercertParams {
   startDate: string;
   endDate: string;
   rights: {
-    name: string;
-    type: string;
-    description: string;
+    rightsName: string;
+    rightsType: string;
+    rightsDescription: string;
   };
   workScope?: string | { uri: string; cid: string };
   image?: Blob;

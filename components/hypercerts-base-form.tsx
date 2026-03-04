@@ -190,9 +190,9 @@ export default function HypercertsBaseForm({
       title,
       shortDescription,
       rights: {
-        name: rights.name.trim(),
-        type: rights.type.trim(),
-        description: rights.description.trim(),
+        rightsName: rights.name.trim(),
+        rightsType: rights.type.trim(),
+        rightsDescription: rights.description.trim(),
       },
       description: shortDescription,
       image: backgroundImage,
