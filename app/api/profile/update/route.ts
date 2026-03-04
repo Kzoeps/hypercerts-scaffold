@@ -105,6 +105,7 @@ export async function POST(req: Request) {
 
       const record: AppCertifiedActorProfile.Record = {
         $type: "app.certified.actor.profile",
+        createdAt: new Date().toISOString(),
       };
       if (displayName) record.displayName = displayName;
       if (description) record.description = description;

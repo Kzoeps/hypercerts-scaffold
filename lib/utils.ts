@@ -1,6 +1,12 @@
 import { BlobRef } from "@atproto/lexicon";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { OrgHypercertsClaimActivity } from "@hypercerts-org/lexicon";
+
+/** The LinearDocument.Main type as used by the hypercerts lexicon */
+type LinearDocument = NonNullable<
+  OrgHypercertsClaimActivity.Main["description"]
+>;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -112,4 +118,39 @@ export function buildStrongRef(cid?: string, uri?: string) {
     cid,
     uri,
   };
+}
+
+/**
+ * Converts a plain string into a PubLeafletPagesLinearDocument.Main structure
+ * suitable for the `description` field on activity and attachment records.
+ */
+export function stringToLinearDocument(text: string): LinearDocument {
+  return {
+    $type: "pub.leaflet.pages.linearDocument",
+    blocks: [
+      {
+        block: {
+          $type: "pub.leaflet.blocks.text",
+          plaintext: text,
+        } as LinearDocument["blocks"][number]["block"],
+      },
+    ],
+  };
+}
+
+/**
+ * Extracts plain text from a PubLeafletPagesLinearDocument.Main structure.
+ * Returns an empty string if the document is undefined or has no text blocks.
+ */
+export function linearDocumentToString(
+  doc: LinearDocument | undefined,
+): string {
+  if (!doc?.blocks) return "";
+  return doc.blocks
+    .map(
+      (b: LinearDocument["blocks"][number]) =>
+        (b.block as { plaintext?: string })?.plaintext ?? "",
+    )
+    .filter(Boolean)
+    .join("\n");
 }

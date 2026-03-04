@@ -9,10 +9,10 @@ import {
 } from "./atproto-writes";
 import type { CertifiedActorProfile } from "@/lib/types";
 import {
-  OrgHypercertsClaimContributionDetails,
+  OrgHypercertsClaimContribution as OrgHypercertsClaimContributionDetails,
   OrgHypercertsClaimContributorInformation,
-  OrgHypercertsClaimEvaluation,
-  OrgHypercertsClaimMeasurement,
+  OrgHypercertsContextEvaluation as OrgHypercertsClaimEvaluation,
+  OrgHypercertsContextMeasurement as OrgHypercertsClaimMeasurement,
   OrgHypercertsClaimActivity,
 } from "@hypercerts-org/lexicon";
 import { assertValidRecord } from "@/lib/record-validation";
@@ -135,7 +135,7 @@ export const addContribution = async (params: {
 
   // 4. Create contributionDetails record
   const detailsRecord: OrgHypercertsClaimContributionDetails.Record = {
-    $type: "org.hypercerts.claim.contributionDetails",
+    $type: "org.hypercerts.claim.contribution",
     role: params.contributionDetails.role,
     createdAt: new Date().toISOString(),
     ...(params.contributionDetails.contributionDescription
@@ -159,7 +159,7 @@ export const addContribution = async (params: {
   );
   const detailsResult = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
-    collection: "org.hypercerts.claim.contributionDetails",
+    collection: "org.hypercerts.claim.contribution",
     record: detailsRecord,
   });
   const detailsRef = {
@@ -240,7 +240,7 @@ export const addEvaluation = async (params: {
   );
 
   const record: OrgHypercertsClaimEvaluation.Record = {
-    $type: "org.hypercerts.claim.evaluation",
+    $type: "org.hypercerts.context.evaluation",
     subject,
     evaluators: evaluationData.evaluators.map((did) => ({ did })),
     summary: evaluationData.summary,
@@ -276,7 +276,7 @@ export const addEvaluation = async (params: {
   );
   const result = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
-    collection: "org.hypercerts.claim.evaluation",
+    collection: "org.hypercerts.context.evaluation",
     record,
   });
 
@@ -334,8 +334,8 @@ export const addMeasurement = async (params: {
   }
 
   const record: OrgHypercertsClaimMeasurement.Record = {
-    $type: "org.hypercerts.claim.measurement",
-    subject,
+    $type: "org.hypercerts.context.measurement",
+    subjects: [subject],
     metric: params.metric,
     value: params.value,
     unit: params.unit,
@@ -359,7 +359,7 @@ export const addMeasurement = async (params: {
   );
   const result = await ctx.agent.com.atproto.repo.createRecord({
     repo: ctx.activeDid,
-    collection: "org.hypercerts.claim.measurement",
+    collection: "org.hypercerts.context.measurement",
     record,
   });
 
@@ -527,16 +527,27 @@ export const updateMeasurement = async (params: {
   // Fetch existing measurement
   const existingResult = await ctx.agent.com.atproto.repo.getRecord({
     repo: parsed.did,
-    collection: parsed.collection || "org.hypercerts.claim.measurement",
+    collection: parsed.collection || "org.hypercerts.context.measurement",
     rkey: parsed.rkey,
   });
   const existing = existingResult.data
-    .value as OrgHypercertsClaimMeasurement.Record;
+    .value as OrgHypercertsClaimMeasurement.Record & {
+    subject?: OrgHypercertsClaimMeasurement.Record["subjects"] extends
+      | (infer T)[]
+      | undefined
+      ? T
+      : never;
+  };
+
+  // Preserve existing subjects, or migrate from old singular subject field
+  const existingSubjects =
+    existing.subjects ?? (existing.subject ? [existing.subject] : undefined);
 
   // Merge updates, preserving immutable fields
   const record: OrgHypercertsClaimMeasurement.Record = {
     ...existing,
-    $type: "org.hypercerts.claim.measurement",
+    $type: "org.hypercerts.context.measurement",
+    ...(existingSubjects !== undefined ? { subjects: existingSubjects } : {}),
   };
 
   // Apply individual updates
@@ -562,7 +573,7 @@ export const updateMeasurement = async (params: {
   );
   const result = await ctx.agent.com.atproto.repo.putRecord({
     repo: ctx.activeDid,
-    collection: parsed.collection || "org.hypercerts.claim.measurement",
+    collection: parsed.collection || "org.hypercerts.context.measurement",
     rkey: parsed.rkey,
     record,
   });

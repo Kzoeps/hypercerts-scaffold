@@ -1,6 +1,6 @@
 import type { OrgHypercertsClaimActivity as HypercertRecord } from "@hypercerts-org/lexicon";
-import type { OrgHypercertsClaimContributionDetails as HypercertContribution } from "@hypercerts-org/lexicon";
-import type { OrgHypercertsClaimAttachment as HypercertEvidence } from "@hypercerts-org/lexicon";
+import type { OrgHypercertsClaimContribution as HypercertContribution } from "@hypercerts-org/lexicon";
+import type { OrgHypercertsContextAttachment as HypercertEvidence } from "@hypercerts-org/lexicon";
 import type { OrgHypercertsClaimRights as HypercertRights } from "@hypercerts-org/lexicon";
 import type { AppCertifiedLocation as HypercertLocation } from "@hypercerts-org/lexicon";
 import type { ComAtprotoRepoGetRecord } from "@atproto/api";
@@ -64,7 +64,7 @@ export interface CreateHypercertParams {
     rightsType: string;
     rightsDescription: string;
   };
-  workScope?: string | { uri: string; cid: string };
+  workScope?: string[]; // tags as array of strings (converted to WorkScopeString at API level)
   image?: Blob;
   contributions?: Array<{
     contributors: Array<
@@ -92,11 +92,11 @@ export interface BaseHypercertFormProps {
 
 export enum Collections {
   claim = "org.hypercerts.claim.activity",
-  contribution = "org.hypercerts.claim.contributionDetails",
-  evidence = "org.hypercerts.claim.attachment",
+  contribution = "org.hypercerts.claim.contribution",
+  evidence = "org.hypercerts.context.attachment",
   location = "app.certified.location",
   rights = "org.hypercerts.claim.rights",
-  evaluation = "org.hypercerts.claim.evaluation",
+  evaluation = "org.hypercerts.context.evaluation",
 }
 
 /** Shape of app.certified.actor.profile record value from getRecord() */

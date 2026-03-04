@@ -199,6 +199,7 @@ export default function HypercertsBaseForm({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       contributions,
+      workScope: workScope.filter((s) => s.trim()),
     };
     return record;
   };

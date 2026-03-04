@@ -5,10 +5,14 @@ import {
   uploadContentBlob,
   type LocationCreateParams,
 } from "@/lib/atproto-writes";
-import { getStringField, parseAtUri } from "@/lib/utils";
+import {
+  getStringField,
+  parseAtUri,
+  stringToLinearDocument,
+} from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  OrgHypercertsClaimAttachment,
+  OrgHypercertsContextAttachment as OrgHypercertsClaimAttachment,
   OrgHypercertsDefs,
 } from "@hypercerts-org/lexicon";
 import { assertValidRecord } from "@/lib/record-validation";
@@ -176,13 +180,15 @@ export async function POST(req: NextRequest) {
 
     // 4. Build attachment record
     const record: OrgHypercertsClaimAttachment.Record = {
-      $type: "org.hypercerts.claim.attachment",
+      $type: "org.hypercerts.context.attachment",
       subjects: [subjectRef],
       content: [contentField],
       title,
       createdAt: new Date().toISOString(),
       ...(shortDescription ? { shortDescription } : {}),
-      ...(description ? { description } : {}),
+      ...(description
+        ? { description: stringToLinearDocument(description) }
+        : {}),
       ...(contentType ? { contentType } : {}),
       ...(locationRef ? { location: locationRef } : {}),
     };
@@ -196,7 +202,7 @@ export async function POST(req: NextRequest) {
 
       const result = await ctx.agent.com.atproto.repo.createRecord({
         repo: ctx.activeDid,
-        collection: "org.hypercerts.claim.attachment",
+        collection: "org.hypercerts.context.attachment",
         record,
       });
 

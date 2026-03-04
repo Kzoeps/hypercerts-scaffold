@@ -7,7 +7,7 @@ import type { ValidationResult } from "@atproto/lexicon";
  * @param validateFn - The validateRecord function from the lexicon namespace
  * @throws Error with descriptive message if validation fails
  */
-export function assertValidRecord<T>(
+export function assertValidRecord<T extends Record<string, unknown>>(
   label: string,
   record: unknown,
   validateFn: (v: unknown) => ValidationResult<T>,

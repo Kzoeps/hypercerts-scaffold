@@ -1,10 +1,11 @@
 "use client";
 
 import { URILink } from "./uri-link";
-import { getPDSlsURI } from "@/lib/utils";
+import { getPDSlsURI, linearDocumentToString } from "@/lib/utils";
 
 import dynamic from "next/dynamic";
 import type { OrgHypercertsClaimActivity as HypercertClaim } from "@hypercerts-org/lexicon";
+import { OrgHypercertsClaimActivity } from "@hypercerts-org/lexicon";
 import {
   MeasurementsSectionSkeleton,
   EvidenceSectionSkeleton,
@@ -55,7 +56,16 @@ export default function HypercertDetailsView({
       router.push("/hypercerts");
     },
   });
-  const workScope = Array.isArray(record.workScope) ? record.workScope : [];
+  let workScope: string[] = [];
+  if (
+    record.workScope &&
+    OrgHypercertsClaimActivity.isWorkScopeString(record.workScope)
+  ) {
+    workScope = record.workScope.scope
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+  }
   const contributors = Array.isArray(record.contributors)
     ? record.contributors
     : undefined;
@@ -226,7 +236,7 @@ export default function HypercertDetailsView({
               Description
             </h2>
             <p className="text-muted-foreground font-[family-name:var(--font-outfit)] text-sm leading-relaxed whitespace-pre-wrap">
-              {record.description}
+              {linearDocumentToString(record.description)}
             </p>
           </div>
         </div>

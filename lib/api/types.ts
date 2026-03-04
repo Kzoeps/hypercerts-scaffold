@@ -25,11 +25,7 @@ export interface CreateHypercertRequest {
     type: string;
     description: string;
   };
-  workScope: {
-    withinAllOf?: string[];
-    withinAnyOf?: string[];
-    withinNoneOf?: string[];
-  };
+  workScope?: string[]; // array of tag strings
   image?: File;
 }
 
