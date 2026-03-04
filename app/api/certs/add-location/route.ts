@@ -101,6 +101,13 @@ export async function POST(req: NextRequest) {
     const hypercertParsed = parseAtUri(hypercertUri);
     if (!hypercertParsed) throw new Error("Invalid hypercertUri");
 
+    if (hypercertParsed.did !== personalRepository.assertDid) {
+      return NextResponse.json(
+        { error: "Cannot modify another user's hypercert" },
+        { status: 403 },
+      );
+    }
+
     const existingResult = await personalRepository.com.atproto.repo.getRecord({
       repo: hypercertParsed.did,
       collection: hypercertParsed.collection || "org.hypercerts.claim.activity",
