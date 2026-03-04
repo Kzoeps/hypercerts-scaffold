@@ -44,8 +44,8 @@ export async function POST(req: Request) {
     const existingProfile =
       (existingResult?.data?.value as Record<string, unknown> | null) ?? null;
 
-    // If no displayName, assume no profile record exists yet
-    if (!existingProfile?.displayName) {
+    // If no profile record exists yet, create it; otherwise update
+    if (existingProfile === null) {
       // Upload blobs if provided
       let avatarBlob, bannerBlob;
       if (avatar) {
