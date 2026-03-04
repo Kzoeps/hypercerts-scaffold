@@ -11,6 +11,7 @@ import {
   OrgHypercertsClaimAttachment,
   OrgHypercertsDefs,
 } from "@hypercerts-org/lexicon";
+import { assertValidRecord } from "@/lib/record-validation";
 
 export async function POST(req: NextRequest) {
   try {
@@ -183,6 +184,19 @@ export async function POST(req: NextRequest) {
       ...(contentType ? { contentType } : {}),
       ...(locationRef ? { location: locationRef } : {}),
     };
+
+    try {
+      assertValidRecord(
+        "attachment",
+        record,
+        OrgHypercertsClaimAttachment.validateRecord,
+      );
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Validation failed" },
+        { status: 400 },
+      );
+    }
 
     const result = await ctx.agent.com.atproto.repo.createRecord({
       repo: ctx.activeDid,

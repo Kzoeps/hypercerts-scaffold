@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAgent } from "@/lib/atproto-session";
 import { revalidatePath } from "next/cache";
-import type { AppBskyActorProfile } from "@atproto/api";
+import { AppBskyActorProfile } from "@atproto/api";
+import { assertValidRecord } from "@/lib/record-validation";
 
 export async function POST(req: Request) {
   try {
@@ -66,6 +67,19 @@ export async function POST(req: Request) {
       if (avatarBlob) record.avatar = avatarBlob;
       if (bannerBlob) record.banner = bannerBlob;
 
+      try {
+        assertValidRecord(
+          "bskyProfile",
+          record,
+          AppBskyActorProfile.validateRecord,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Validation failed" },
+          { status: 400 },
+        );
+      }
+
       await repo.com.atproto.repo.createRecord({
         repo: repo.assertDid,
         collection: "app.bsky.actor.profile",
@@ -101,6 +115,19 @@ export async function POST(req: Request) {
       // Remove null fields (null means remove)
       if (record.displayName === null) delete record.displayName;
       if (record.description === null) delete record.description;
+
+      try {
+        assertValidRecord(
+          "bskyProfile",
+          record,
+          AppBskyActorProfile.validateRecord,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Validation failed" },
+          { status: 400 },
+        );
+      }
 
       await repo.com.atproto.repo.putRecord({
         repo: repo.assertDid,

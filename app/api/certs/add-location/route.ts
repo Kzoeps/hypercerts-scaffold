@@ -6,6 +6,7 @@ import {
 import { parseAtUri, getStringField } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { OrgHypercertsClaimActivity } from "@hypercerts-org/lexicon";
+import { assertValidRecord } from "@/lib/record-validation";
 
 export async function POST(req: NextRequest) {
   try {
@@ -112,6 +113,19 @@ export async function POST(req: NextRequest) {
     existingRecord.locations = [...existingLocations, locationRef];
 
     // 3. Update hypercert
+    try {
+      assertValidRecord(
+        "activity",
+        existingRecord,
+        OrgHypercertsClaimActivity.validateRecord,
+      );
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Validation failed" },
+        { status: 400 },
+      );
+    }
+
     await personalRepository.com.atproto.repo.putRecord({
       repo: personalRepository.assertDid,
       collection: hypercertParsed.collection || "org.hypercerts.claim.activity",

@@ -5,6 +5,8 @@ import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
 import { getSession } from "@/lib/atproto-session";
 import { resolveSessionPds } from "@/lib/server-utils";
 import type { CertifiedActorProfile } from "@/lib/types";
+import { AppCertifiedActorProfile } from "@hypercerts-org/lexicon";
+import { assertValidRecord } from "@/lib/record-validation";
 
 export async function POST(req: Request) {
   try {
@@ -79,6 +81,19 @@ export async function POST(req: Request) {
       if (avatarBlob) record.avatar = avatarBlob;
       if (bannerBlob) record.banner = bannerBlob;
 
+      try {
+        assertValidRecord(
+          "certifiedProfile",
+          record,
+          AppCertifiedActorProfile.validateRecord,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Validation failed" },
+          { status: 400 },
+        );
+      }
+
       await repo.com.atproto.repo.createRecord({
         repo: repo.assertDid,
         collection: "app.certified.actor.profile",
@@ -126,6 +141,19 @@ export async function POST(req: Request) {
       // Handle blobs: new File = upload and set
       if (avatarBlob) updateRecord.avatar = avatarBlob;
       if (bannerBlob) updateRecord.banner = bannerBlob;
+
+      try {
+        assertValidRecord(
+          "certifiedProfile",
+          updateRecord,
+          AppCertifiedActorProfile.validateRecord,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Validation failed" },
+          { status: 400 },
+        );
+      }
 
       await repo.com.atproto.repo.putRecord({
         repo: repo.assertDid,
