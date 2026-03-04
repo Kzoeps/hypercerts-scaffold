@@ -34,7 +34,7 @@ export function BlobDisplay({
           <>
             {" · "}
             <URILink
-              uri={getBlobURL(content, did)}
+              uri={getBlobURL(blobRef, did)}
               label={blobRef.toString()}
             />
           </>

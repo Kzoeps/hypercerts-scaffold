@@ -6,7 +6,7 @@ import { resolveSessionPds } from "./server-utils";
 import { BlobRef } from "@atproto/lexicon";
 
 export async function resolveBlobToUrl(
-  blob: BlobRef | string | { $type: string } | undefined,
+  blob: BlobRef | string | undefined,
   ownerDid: string,
 ): Promise<string | undefined> {
   if (!blob) return undefined;
@@ -42,7 +42,7 @@ export async function resolveRecordBlobs(
 
   // Check if this object is a BlobRef (has $type: 'blob' or 'ref' property from atproto returns)
   if (obj.$type === "blob" || (obj.ref && obj.mimeType)) {
-    return await resolveBlobToUrl(obj as BlobRef | { $type: string }, ownerDid);
+    return await resolveBlobToUrl(obj as unknown as BlobRef, ownerDid);
   }
 
   // Recursively process properties in parallel

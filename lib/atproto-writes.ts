@@ -1,6 +1,7 @@
 import "server-only";
 
 import { Agent } from "@atproto/api";
+import { BlobRef } from "@atproto/lexicon";
 import { parseAtUri } from "./utils";
 
 export interface StrongRef {
@@ -98,7 +99,7 @@ export async function processLocations(
 export async function uploadContentBlob(
   agent: Agent,
   file: File | Blob,
-): Promise<unknown> {
+): Promise<BlobRef> {
   const blob =
     file instanceof File ? new Blob([file], { type: file.type }) : file;
   const result = await agent.com.atproto.repo.uploadBlob(blob);
