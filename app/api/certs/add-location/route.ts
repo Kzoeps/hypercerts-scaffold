@@ -3,7 +3,7 @@ import {
   createLocationRecord,
   type LocationCreateParams,
 } from "@/lib/atproto-writes";
-import { parseAtUri } from "@/lib/utils";
+import { parseAtUri, getStringField } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -11,17 +11,16 @@ export async function POST(req: NextRequest) {
     const data = await req.formData();
     const repoPromise = getAgent();
 
-    const hypercertUri = (data.get("hypercertUri") as string | null)?.trim();
-    const srs = (data.get("srs") as string | null)?.trim();
-    const contentMode =
-      (data.get("contentMode") as string | null)?.trim() ?? "link";
+    const hypercertUri = getStringField(data, "hypercertUri")?.trim();
+    const srs = getStringField(data, "srs")?.trim();
+    const contentMode = getStringField(data, "contentMode")?.trim() ?? "link";
 
-    const name = (data.get("name") as string | null)?.trim() ?? undefined;
+    const name = getStringField(data, "name")?.trim() ?? undefined;
     const description =
-      (data.get("description") as string | null)?.trim() ?? undefined;
+      getStringField(data, "description")?.trim() ?? undefined;
 
-    const locationType = (data.get("locationType") as string | null)?.trim();
-    const lpVersion = (data.get("lpVersion") as string | null)?.trim();
+    const locationType = getStringField(data, "locationType")?.trim();
+    const lpVersion = getStringField(data, "lpVersion")?.trim();
 
     if (!locationType || !lpVersion || !srs) {
       return NextResponse.json(
@@ -41,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     let locationPayload: LocationCreateParams;
     if (contentMode === "link") {
-      const locationUrl = (data.get("locationUrl") as string | null)?.trim();
+      const locationUrl = getStringField(data, "locationUrl")?.trim();
 
       if (!locationUrl) {
         return NextResponse.json(

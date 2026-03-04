@@ -1,6 +1,6 @@
 import { getRepoContext } from "@/lib/repo-context";
 import { uploadContentBlob } from "@/lib/atproto-writes";
-import { parseAtUri } from "@/lib/utils";
+import { parseAtUri, getStringField } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 interface HypercertRights {
@@ -25,15 +25,15 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const ctxPromise = getRepoContext();
-    const title = formData.get("title") as string | null;
-    const shortDescription = formData.get("shortDescription") as string | null;
-    const description = formData.get("description") as string | null;
-    const startDate = formData.get("startDate") as string | null;
-    const endDate = formData.get("endDate") as string | null;
-    const rightsRaw = formData.get("rights") as string | null;
+    const title = getStringField(formData, "title");
+    const shortDescription = getStringField(formData, "shortDescription");
+    const description = getStringField(formData, "description");
+    const startDate = getStringField(formData, "startDate");
+    const endDate = getStringField(formData, "endDate");
+    const rightsRaw = getStringField(formData, "rights");
     // TODO map to proper workscope
-    // // const workScopeRaw = formData.get("workScope") as string | null;
-    const contributionsRaw = formData.get("contributions") as string | null;
+    // // const workScopeRaw = getStringField(formData, "workScope");
+    const contributionsRaw = getStringField(formData, "contributions");
 
     const image = formData.get("image") as File | null;
 
@@ -161,7 +161,7 @@ export async function PUT(req: NextRequest) {
   try {
     const formData = await req.formData();
     const ctxPromise = getRepoContext();
-    const hypercertUri = formData.get("hypercertUri") as string | null;
+    const hypercertUri = getStringField(formData, "hypercertUri");
 
     if (!hypercertUri) {
       return NextResponse.json(
@@ -170,11 +170,11 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const title = formData.get("title") as string | null;
-    const shortDescription = formData.get("shortDescription") as string | null;
-    const description = formData.get("description") as string | null;
-    const startDate = formData.get("startDate") as string | null;
-    const endDate = formData.get("endDate") as string | null;
+    const title = getStringField(formData, "title");
+    const shortDescription = getStringField(formData, "shortDescription");
+    const description = getStringField(formData, "description");
+    const startDate = getStringField(formData, "startDate");
+    const endDate = getStringField(formData, "endDate");
     const imageRaw = formData.get("image");
 
     const ctx = await ctxPromise;
