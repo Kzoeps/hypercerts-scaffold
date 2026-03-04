@@ -6,6 +6,7 @@ import { OrgHypercertsClaimAttachment as HypercertEvidence } from "@hypercerts-o
 import { AppCertifiedLocation as HypercertLocation } from "@hypercerts-org/lexicon";
 import { Collections } from "@/lib/types";
 import { parseAtUri } from "@/lib/utils";
+import { assertValidRecord } from "@/lib/record-validation";
 
 export const getRecordWithURI = async <T>(
   uri: string,
@@ -59,6 +60,7 @@ export const createHypercert = async (
   atProtoAgent: Agent,
   record: HypercertClaim.Record,
 ) => {
+  assertValidRecord("activity", record, HypercertClaim.validateRecord);
   const data = await atProtoAgent.com.atproto.repo.createRecord({
     repo: atProtoAgent.assertDid,
     collection: Collections.claim,
@@ -72,6 +74,7 @@ export const updateHypercert = async (
   atProtoAgent: Agent,
   record: HypercertClaim.Record,
 ) => {
+  assertValidRecord("activity", record, HypercertClaim.validateRecord);
   const data = await atProtoAgent.com.atproto.repo.putRecord({
     rkey,
     repo: atProtoAgent.assertDid,
@@ -85,6 +88,11 @@ export const createContribution = async (
   atProtoAgent: Agent,
   record: HypercertContribution.Record,
 ) => {
+  assertValidRecord(
+    "contributionDetails",
+    record,
+    HypercertContribution.validateRecord,
+  );
   const response = await atProtoAgent?.com.atproto.repo.createRecord({
     record,
     collection: Collections.contribution,
@@ -97,6 +105,7 @@ export const createEvaluation = async (
   atProtoAgent: Agent,
   record: HypercertEvaluation.Record,
 ) => {
+  assertValidRecord("evaluation", record, HypercertEvaluation.validateRecord);
   const response = await atProtoAgent?.com.atproto.repo.createRecord({
     record,
     collection: Collections.evaluation,
@@ -109,6 +118,7 @@ export const createEvidence = async (
   atProtoAgent: Agent,
   record: HypercertEvidence.Record,
 ) => {
+  assertValidRecord("evidence", record, HypercertEvidence.validateRecord);
   const response = await atProtoAgent.com.atproto.repo.createRecord({
     record,
     collection: Collections.evidence,
@@ -121,6 +131,7 @@ export const createLocation = async (
   atProtoAgent: Agent,
   record: HypercertLocation.Record,
 ) => {
+  assertValidRecord("location", record, HypercertLocation.validateRecord);
   const response = await atProtoAgent.com.atproto.repo.createRecord({
     record,
     collection: Collections.location,

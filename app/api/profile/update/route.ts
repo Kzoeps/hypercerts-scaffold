@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
 import { getSession } from "@/lib/atproto-session";
 import { resolveSessionPds } from "@/lib/server-utils";
-import type { CertifiedActorProfile } from "@/lib/types";
+import { AppCertifiedActorProfile } from "@hypercerts-org/lexicon";
+import { assertValidRecord } from "@/lib/record-validation";
 
 export async function POST(req: Request) {
   try {
@@ -51,8 +52,9 @@ export async function POST(req: Request) {
       })
       .catch(() => null);
     const existingProfile =
-      (existingResult?.data?.value as CertifiedActorProfile | undefined) ??
-      null;
+      (existingResult?.data?.value as
+        | AppCertifiedActorProfile.Record
+        | undefined) ?? null;
 
     // If no profile record exists yet, create it; otherwise update
     if (existingProfile === null) {
@@ -69,15 +71,32 @@ export async function POST(req: Request) {
         bannerBlob = uploadResult.data.blob;
       }
 
-      const record: Record<string, unknown> = {
+      const record: AppCertifiedActorProfile.Record = {
         $type: "app.certified.actor.profile",
       };
       if (displayName) record.displayName = displayName;
       if (description) record.description = description;
       if (pronouns) record.pronouns = pronouns;
       if (website) record.website = website;
-      if (avatarBlob) record.avatar = avatarBlob;
-      if (bannerBlob) record.banner = bannerBlob;
+      if (avatarBlob)
+        record.avatar =
+          avatarBlob as unknown as AppCertifiedActorProfile.Record["avatar"];
+      if (bannerBlob)
+        record.banner =
+          bannerBlob as unknown as AppCertifiedActorProfile.Record["banner"];
+
+      try {
+        assertValidRecord(
+          "certifiedProfile",
+          record,
+          AppCertifiedActorProfile.validateRecord,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Validation failed" },
+          { status: 400 },
+        );
+      }
 
       await repo.com.atproto.repo.createRecord({
         repo: repo.assertDid,
@@ -100,7 +119,7 @@ export async function POST(req: Request) {
       }
 
       // Merge: null = remove, undefined = preserve existing, value = set
-      const updateRecord: Record<string, unknown> = {
+      const updateRecord: AppCertifiedActorProfile.Record = {
         ...existingProfile,
         $type: "app.certified.actor.profile",
       };
@@ -124,8 +143,25 @@ export async function POST(req: Request) {
       }
 
       // Handle blobs: new File = upload and set
-      if (avatarBlob) updateRecord.avatar = avatarBlob;
-      if (bannerBlob) updateRecord.banner = bannerBlob;
+      if (avatarBlob)
+        updateRecord.avatar =
+          avatarBlob as unknown as AppCertifiedActorProfile.Record["avatar"];
+      if (bannerBlob)
+        updateRecord.banner =
+          bannerBlob as unknown as AppCertifiedActorProfile.Record["banner"];
+
+      try {
+        assertValidRecord(
+          "certifiedProfile",
+          updateRecord,
+          AppCertifiedActorProfile.validateRecord,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Validation failed" },
+          { status: 400 },
+        );
+      }
 
       await repo.com.atproto.repo.putRecord({
         repo: repo.assertDid,
@@ -144,7 +180,7 @@ export async function POST(req: Request) {
       })
       .catch(() => null);
     const updated = updatedResult?.data?.value as
-      | CertifiedActorProfile
+      | AppCertifiedActorProfile.Record
       | undefined;
 
     // Convert BlobRef objects to URLs, then to CDN URLs
@@ -152,11 +188,19 @@ export async function POST(req: Request) {
     const pdsUrl = session ? await resolveSessionPds(session) : undefined;
     const avatarUrl =
       convertBlobUrlToCdn(
-        getBlobURL(updated?.avatar, repo.assertDid, pdsUrl),
+        getBlobURL(
+          updated?.avatar as unknown as Parameters<typeof getBlobURL>[0],
+          repo.assertDid,
+          pdsUrl,
+        ),
       ) || "";
     const bannerUrl =
       convertBlobUrlToCdn(
-        getBlobURL(updated?.banner, repo.assertDid, pdsUrl),
+        getBlobURL(
+          updated?.banner as unknown as Parameters<typeof getBlobURL>[0],
+          repo.assertDid,
+          pdsUrl,
+        ),
       ) || "";
 
     return NextResponse.json({

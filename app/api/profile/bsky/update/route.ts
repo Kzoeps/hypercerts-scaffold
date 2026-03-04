@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAgent } from "@/lib/atproto-session";
 import { revalidatePath } from "next/cache";
-import type { AppBskyActorProfile } from "@atproto/api";
+import { AppBskyActorProfile } from "@atproto/api";
+import { assertValidRecord } from "@/lib/record-validation";
 
 export async function POST(req: Request) {
   try {
@@ -58,13 +59,26 @@ export async function POST(req: Request) {
         bannerBlob = uploadResult.data.blob;
       }
 
-      const record: Record<string, unknown> = {
+      const record: AppBskyActorProfile.Record = {
         $type: "app.bsky.actor.profile",
       };
       if (displayName) record.displayName = displayName;
       if (description) record.description = description;
       if (avatarBlob) record.avatar = avatarBlob;
       if (bannerBlob) record.banner = bannerBlob;
+
+      try {
+        assertValidRecord(
+          "bskyProfile",
+          record,
+          AppBskyActorProfile.validateRecord,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Validation failed" },
+          { status: 400 },
+        );
+      }
 
       await repo.com.atproto.repo.createRecord({
         repo: repo.assertDid,
@@ -86,21 +100,38 @@ export async function POST(req: Request) {
         bannerBlob = uploadResult.data.blob;
       }
 
-      // Merge with existing record: null removes field, undefined preserves existing
-      const record: Record<string, unknown> = {
+      // Merge with existing record: empty string removes field, non-empty sets it
+      const record: AppBskyActorProfile.Record = {
         ...existingProfile,
-        $type: "app.bsky.actor.profile",
-        displayName: displayName || null,
-        description: description || null,
+        $type: "app.bsky.actor.profile" as const,
       };
+      if (displayName) {
+        record.displayName = displayName;
+      } else {
+        delete record.displayName;
+      }
+      if (description) {
+        record.description = description;
+      } else {
+        delete record.description;
+      }
 
       // Only update avatar/banner if user uploaded new files
       if (avatarBlob) record.avatar = avatarBlob;
       if (bannerBlob) record.banner = bannerBlob;
 
-      // Remove null fields (null means remove)
-      if (record.displayName === null) delete record.displayName;
-      if (record.description === null) delete record.description;
+      try {
+        assertValidRecord(
+          "bskyProfile",
+          record,
+          AppBskyActorProfile.validateRecord,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Validation failed" },
+          { status: 400 },
+        );
+      }
 
       await repo.com.atproto.repo.putRecord({
         repo: repo.assertDid,

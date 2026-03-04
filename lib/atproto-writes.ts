@@ -7,6 +7,7 @@ import {
   AppCertifiedLocation,
   OrgHypercertsDefs,
 } from "@hypercerts-org/lexicon";
+import { assertValidRecord } from "./record-validation";
 
 export interface StrongRef {
   uri: string;
@@ -77,6 +78,8 @@ export async function createLocationRecord(
     ...(params.name ? { name: params.name } : {}),
     ...(params.description ? { description: params.description } : {}),
   };
+
+  assertValidRecord("location", record, AppCertifiedLocation.validateRecord);
 
   const result = await agent.com.atproto.repo.createRecord({
     repo: did,

@@ -1,9 +1,6 @@
 import { BlobRef } from "@atproto/lexicon";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { OrgHypercertsClaimActivity as Hypercert } from "@hypercerts-org/lexicon";
-import { OrgHypercertsClaimContributionDetails as Contribution } from "@hypercerts-org/lexicon";
-import { OrgHypercertsClaimEvaluation as Evaluation } from "@hypercerts-org/lexicon";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -86,39 +83,6 @@ export function convertBlobUrlToCdn(url: string | null | undefined): string {
     return "";
   }
 }
-
-export const validateHypercert = (data: unknown) => {
-  if (!Hypercert.isRecord(data)) {
-    return { success: false, error: "Invalid Hypercert Record" };
-  }
-  const validation = Hypercert.validateRecord(data);
-  if (validation.success) {
-    return { success: true, error: null };
-  }
-  return { success: false, error: validation.error.message };
-};
-
-export const validateContribution = (data: unknown) => {
-  if (!Contribution.isRecord(data)) {
-    return { success: false, error: "Invalid Contribution Record" };
-  }
-  const validation = Contribution.validateRecord(data);
-  if (validation.success) {
-    return { success: true, error: null };
-  }
-  return { success: false, error: validation.error.message };
-};
-
-export const validateEvaluation = (data: unknown) => {
-  if (!Evaluation.isRecord(data)) {
-    return { success: false, error: "Invalid Evaluation Record" };
-  }
-  const validation = Evaluation.validateRecord(data);
-  if (validation.success) {
-    return { success: true, error: null };
-  }
-  return { success: false, error: validation.error.message };
-};
 
 export function parseAtUri(atUri?: string) {
   // at://did:plc:xyz/app.namespace.record/abc123
