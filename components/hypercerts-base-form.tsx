@@ -354,6 +354,7 @@ export default function HypercertsBaseForm({
                 src={imagePreview}
                 alt="Preview"
                 fill
+                unoptimized
                 className="object-cover opacity-60 transition-opacity group-hover:opacity-40"
               />
               <div className="relative z-10 flex flex-col items-center gap-1">

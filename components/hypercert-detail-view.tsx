@@ -105,6 +105,7 @@ export default function HypercertDetailsView({
           <div className="glass-panel border-border/50 relative aspect-[16/7] overflow-hidden rounded-xl border">
             <Image
               fill
+              unoptimized
               alt={record.title || "Hypercert cover"}
               src={imageUri}
               className="object-cover"

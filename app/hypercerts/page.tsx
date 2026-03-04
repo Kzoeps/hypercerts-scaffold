@@ -127,6 +127,7 @@ export default async function MyHypercertsPage() {
                         {imageUrl ? (
                           <Image
                             fill
+                            unoptimized
                             alt={cert.title || "Hypercert cover"}
                             src={imageUrl}
                             className="object-cover transition-transform duration-300 group-hover:scale-105"
