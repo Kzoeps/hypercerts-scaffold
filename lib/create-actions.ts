@@ -25,28 +25,42 @@ export interface GrantAccessParams {
   userDid: string;
   role: RepositoryRole;
 }
-export const getActiveProfileInfo = async () => {
-  const ctx = await getRepoContext();
-  if (!ctx) return null;
 
-  const profileResult = await ctx.agent.com.atproto.repo
-    .getRecord({
-      repo: ctx.targetDid,
-      collection: "app.certified.actor.profile",
-      rkey: "self",
-    })
-    .catch(() => null);
-  const profile = profileResult?.data?.value as
-    | CertifiedActorProfile
-    | undefined;
-  if (!profile) return null;
-  return {
-    name: profile.displayName || profile.handle,
-    handle: profile.handle,
-    isOrganization: false,
+export interface ActiveProfileInfo {
+  name: string | undefined;
+  handle: string | undefined;
+  isOrganization: boolean;
+}
+
+export interface SerializedRecord {
+  uri: string;
+  cid: string;
+  value: Record<string, unknown>;
+}
+
+export const getActiveProfileInfo =
+  async (): Promise<ActiveProfileInfo | null> => {
+    const ctx = await getRepoContext();
+    if (!ctx) return null;
+
+    const profileResult = await ctx.agent.com.atproto.repo
+      .getRecord({
+        repo: ctx.targetDid,
+        collection: "app.certified.actor.profile",
+        rkey: "self",
+      })
+      .catch(() => null);
+    const profile = profileResult?.data?.value as
+      | CertifiedActorProfile
+      | undefined;
+    if (!profile) return null;
+    return {
+      name: profile.displayName || profile.handle,
+      handle: profile.handle,
+      isOrganization: false,
+    };
   };
-};
-export const switchActiveProfile = async (did: string) => {
+export const switchActiveProfile = async (did: string): Promise<void> => {
   const cookiePromise = cookies();
   const session = await getSession();
   if (!session) {
@@ -64,7 +78,7 @@ export const switchActiveProfile = async (did: string) => {
   });
 };
 
-export const logout = async () => {
+export const logout = async (): Promise<void> => {
   const session = await getSession();
   if (!session) {
     return;
@@ -81,7 +95,7 @@ export const addContribution = async (params: {
     startDate?: string;
     endDate?: string;
   };
-}) => {
+}): Promise<{ uri: string; cid: string }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -182,7 +196,7 @@ export const addEvaluation = async (params: {
   content?: string[];
   measurements?: string[];
   location?: string;
-}) => {
+}): Promise<{ uri: string; cid: string }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -263,7 +277,7 @@ export const addMeasurement = async (params: {
   evidenceURI?: string[];
   locations?: MeasurementLocationParam[];
   comment?: string;
-}) => {
+}): Promise<{ uri: string; cid: string }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -320,7 +334,7 @@ export const getMeasurementRecord = async (params: {
   did: string;
   collection: string;
   rkey: string;
-}) => {
+}): Promise<SerializedRecord> => {
   const { did, collection, rkey } = params;
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
@@ -338,14 +352,14 @@ export const getMeasurementRecord = async (params: {
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
-  return JSON.parse(JSON.stringify(data));
+  return JSON.parse(JSON.stringify(data)) as SerializedRecord;
 };
 
 export const getEvaluationRecord = async (params: {
   did: string;
   collection: string;
   rkey: string;
-}) => {
+}): Promise<SerializedRecord> => {
   const { did, collection, rkey } = params;
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
@@ -363,14 +377,14 @@ export const getEvaluationRecord = async (params: {
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
-  return JSON.parse(JSON.stringify(data));
+  return JSON.parse(JSON.stringify(data)) as SerializedRecord;
 };
 
 export const getEvidenceRecord = async (params: {
   did: string;
   collection: string;
   rkey: string;
-}) => {
+}): Promise<SerializedRecord> => {
   const { did, collection, rkey } = params;
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
@@ -388,14 +402,14 @@ export const getEvidenceRecord = async (params: {
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
-  return JSON.parse(JSON.stringify(data));
+  return JSON.parse(JSON.stringify(data)) as SerializedRecord;
 };
 
 export const getContributorInformationRecord = async (params: {
   did: string;
   collection: string;
   rkey: string;
-}) => {
+}): Promise<SerializedRecord> => {
   const { did, collection, rkey } = params;
   const ctx = await getRepoContext({ targetDid: did });
   if (!ctx) {
@@ -412,10 +426,12 @@ export const getContributorInformationRecord = async (params: {
   if (data?.value) {
     data.value = await resolveRecordBlobs(data.value, did);
   }
-  return JSON.parse(JSON.stringify(data));
+  return JSON.parse(JSON.stringify(data)) as SerializedRecord;
 };
 
-export const deleteHypercert = async (params: { hypercertUri: string }) => {
+export const deleteHypercert = async (params: {
+  hypercertUri: string;
+}): Promise<{ success: true }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -453,7 +469,7 @@ export const updateMeasurement = async (params: {
     evidenceURI?: string[];
     comment?: string;
   };
-}) => {
+}): Promise<{ uri: string; cid: string }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(
@@ -513,7 +529,9 @@ export const updateMeasurement = async (params: {
   return { uri: result.data.uri, cid: result.data.cid };
 };
 
-export const deleteRecord = async (params: { recordUri: string }) => {
+export const deleteRecord = async (params: {
+  recordUri: string;
+}): Promise<{ success: true }> => {
   const ctx = await getRepoContext();
   if (!ctx) {
     throw new Error(

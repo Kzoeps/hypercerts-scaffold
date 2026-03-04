@@ -60,7 +60,7 @@ export default function HypercertEvaluationsSection({
           const link = evaluationLinks[i];
           const recordUri = `at://${link.did}/${link.collection}/${link.rkey}`;
           items.push({
-            evaluation: q.data.value as Evaluation,
+            evaluation: q.data.value as unknown as Evaluation,
             recordUri,
           });
         }
