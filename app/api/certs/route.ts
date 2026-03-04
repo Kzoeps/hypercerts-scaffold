@@ -149,25 +149,36 @@ export async function POST(req: NextRequest) {
         claimRecord,
         OrgHypercertsClaimActivity.validateRecord,
       );
+      const claimResult = await ctx.agent.com.atproto.repo.createRecord({
+        repo: ctx.activeDid,
+        collection: "org.hypercerts.claim.activity",
+        record: claimRecord,
+      });
+      const data = {
+        hypercertUri: claimResult.data.uri,
+        hypercertCid: claimResult.data.cid,
+        rightsUri: rightsResult.data.uri,
+        rightsCid: rightsResult.data.cid,
+      };
+      return NextResponse.json(data);
     } catch (e) {
-      return NextResponse.json(
-        { error: e instanceof Error ? e.message : "Validation failed" },
-        { status: 400 },
-      );
+      // Compensating delete of orphaned rights record
+      const parsedRights = parseAtUri(rightsResult.data.uri);
+      if (parsedRights) {
+        await ctx.agent.com.atproto.repo
+          .deleteRecord({
+            repo: ctx.activeDid,
+            collection:
+              parsedRights.collection || "org.hypercerts.claim.rights",
+            rkey: parsedRights.rkey,
+          })
+          .catch(() => undefined); // best-effort cleanup
+      }
+      if (e instanceof Error && e.message.startsWith("Invalid")) {
+        return NextResponse.json({ error: e.message }, { status: 400 });
+      }
+      throw e;
     }
-    const claimResult = await ctx.agent.com.atproto.repo.createRecord({
-      repo: ctx.activeDid,
-      collection: "org.hypercerts.claim.activity",
-      record: claimRecord,
-    });
-
-    const data = {
-      hypercertUri: claimResult.data.uri,
-      hypercertCid: claimResult.data.cid,
-      rightsUri: rightsResult.data.uri,
-      rightsCid: rightsResult.data.cid,
-    };
-    return NextResponse.json(data);
   } catch (e) {
     if (e instanceof Error && e.message.startsWith("INVALID_JSON:")) {
       const field = e.message.split(":")[1];
