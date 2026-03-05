@@ -1,43 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAgent } from "@/lib/atproto-session";
 import { revalidatePath } from "next/cache";
-import { getBlobURL, convertBlobUrlToCdn } from "@/lib/utils";
+import { convertBlobUrlToCdn } from "@/lib/utils";
 import { getSession } from "@/lib/atproto-session";
 import { resolveSessionPds } from "@/lib/server-utils";
-import {
-  AppCertifiedActorProfile,
-  OrgHypercertsDefs,
-} from "@hypercerts-org/lexicon";
+import { AppCertifiedActorProfile } from "@hypercerts-org/lexicon";
 import { assertValidRecord } from "@/lib/record-validation";
-
-/**
- * Safely extracts a URL from a certified profile avatar/banner union type.
- *
- * The union is: $Typed<Uri> | $Typed<SmallImage> | $Typed<LargeImage> | { $type: string }
- * - Uri ($type 'org.hypercerts.defs#uri'): has a `uri` string — return it directly
- * - SmallImage ($type 'org.hypercerts.defs#smallImage'): has an `image` BlobRef — pass to getBlobURL
- * - LargeImage ($type 'org.hypercerts.defs#largeImage'): has an `image` BlobRef — pass to getBlobURL
- * - Unknown $type: return undefined
- */
-function getCertifiedProfileImageURL(
-  field:
-    | AppCertifiedActorProfile.Record["avatar"]
-    | AppCertifiedActorProfile.Record["banner"],
-  did: string,
-  pdsUrl: string | undefined,
-): string | undefined {
-  if (!field) return undefined;
-  if (OrgHypercertsDefs.isUri(field)) {
-    return field.uri;
-  }
-  if (OrgHypercertsDefs.isSmallImage(field)) {
-    return getBlobURL(field.image, did, pdsUrl);
-  }
-  if (OrgHypercertsDefs.isLargeImage(field)) {
-    return getBlobURL(field.image, did, pdsUrl);
-  }
-  return undefined;
-}
+import { getCertifiedProfileImageURL } from "@/lib/profile-utils";
 
 export async function POST(req: Request) {
   try {
@@ -53,8 +22,11 @@ export async function POST(req: Request) {
     const pronouns = formData.get("pronouns")?.toString() || "";
     const website = formData.get("website")?.toString() || "";
 
-    const avatar = formData.get("avatar") as File | null;
-    const banner = formData.get("banner") as File | null;
+    const avatarRaw = formData.get("avatar") as File | null;
+    const bannerRaw = formData.get("banner") as File | null;
+    // Treat empty/zero-size files as "no upload"
+    const avatar = avatarRaw && avatarRaw.size > 0 ? avatarRaw : null;
+    const banner = bannerRaw && bannerRaw.size > 0 ? bannerRaw : null;
 
     if (avatar && avatar.size > 1_000_000) {
       return NextResponse.json(
@@ -112,11 +84,15 @@ export async function POST(req: Request) {
       if (pronouns) record.pronouns = pronouns;
       if (website) record.website = website;
       if (avatarBlob)
-        record.avatar =
-          avatarBlob.original as AppCertifiedActorProfile.Record["avatar"];
+        record.avatar = {
+          $type: "org.hypercerts.defs#smallImage" as const,
+          image: avatarBlob,
+        };
       if (bannerBlob)
-        record.banner =
-          bannerBlob.original as AppCertifiedActorProfile.Record["banner"];
+        record.banner = {
+          $type: "org.hypercerts.defs#largeImage" as const,
+          image: bannerBlob,
+        };
 
       try {
         assertValidRecord(
@@ -177,11 +153,15 @@ export async function POST(req: Request) {
 
       // Handle blobs: new File = upload and set
       if (avatarBlob)
-        updateRecord.avatar =
-          avatarBlob.original as AppCertifiedActorProfile.Record["avatar"];
+        updateRecord.avatar = {
+          $type: "org.hypercerts.defs#smallImage" as const,
+          image: avatarBlob,
+        };
       if (bannerBlob)
-        updateRecord.banner =
-          bannerBlob.original as AppCertifiedActorProfile.Record["banner"];
+        updateRecord.banner = {
+          $type: "org.hypercerts.defs#largeImage" as const,
+          image: bannerBlob,
+        };
 
       try {
         assertValidRecord(

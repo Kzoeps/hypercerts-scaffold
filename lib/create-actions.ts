@@ -7,19 +7,17 @@ import {
   processLocations,
   type StrongRef,
 } from "./atproto-writes";
-import type { CertifiedActorProfile } from "@/lib/types";
 import {
-  OrgHypercertsClaimContribution as OrgHypercertsClaimContributionDetails,
-  OrgHypercertsClaimContributorInformation,
+  AppCertifiedActorProfile,
   OrgHypercertsContextEvaluation as OrgHypercertsClaimEvaluation,
   OrgHypercertsContextMeasurement as OrgHypercertsClaimMeasurement,
-  OrgHypercertsClaimActivity,
 } from "@hypercerts-org/lexicon";
 import { assertValidRecord } from "@/lib/record-validation";
+import { processContributions } from "@/lib/contribution-helpers";
 
 export type RepositoryRole = "admin" | "writer" | "reader";
 import { cookies } from "next/headers";
-import { getSession } from "./atproto-session";
+import { getSession, resolveHandle } from "./atproto-session";
 import oauthClient from "./hypercerts-sdk";
 
 export interface GrantAccessParams {
@@ -53,12 +51,13 @@ export const getActiveProfileInfo =
       })
       .catch(() => null);
     const profile = profileResult?.data?.value as
-      | CertifiedActorProfile
+      | AppCertifiedActorProfile.Record
       | undefined;
     if (!profile) return null;
+    const handle = await resolveHandle(ctx.agent, ctx.targetDid);
     return {
-      name: profile.displayName || profile.handle,
-      handle: profile.handle,
+      name: profile.displayName || handle,
+      handle,
       isOrganization: false,
     };
   };
@@ -105,113 +104,18 @@ export const addContribution = async (params: {
     );
   }
 
-  // 1. Parse and validate the hypercertUri before any writes
-  const hypercertParsed = parseAtUri(params.hypercertUri);
-  if (
-    !hypercertParsed ||
-    !hypercertParsed.collection ||
-    !hypercertParsed.rkey
-  ) {
-    throw new Error("addContribution failed: invalid hypercertUri.");
-  }
+  const result = await processContributions(ctx, params.hypercertUri, [
+    {
+      contributors: params.contributors,
+      role: params.contributionDetails.role,
+      contributionDescription:
+        params.contributionDetails.contributionDescription,
+      startDate: params.contributionDetails.startDate,
+      endDate: params.contributionDetails.endDate,
+    },
+  ]);
 
-  // 2. Ownership check — must happen before any child record writes
-  if (hypercertParsed.did !== ctx.activeDid) {
-    throw new Error(
-      "addContribution failed: cannot modify another user's hypercert.",
-    );
-  }
-
-  // 3. Fetch the existing hypercert record before creating child records
-  const existingHypercertResult = await ctx.agent.com.atproto.repo.getRecord({
-    repo: hypercertParsed.did,
-    collection: hypercertParsed.collection,
-    rkey: hypercertParsed.rkey,
-  });
-  const existingRecord = existingHypercertResult.data.value as Record<
-    string,
-    unknown
-  >;
-
-  // 4. Create contributionDetails record
-  const detailsRecord: OrgHypercertsClaimContributionDetails.Record = {
-    $type: "org.hypercerts.claim.contribution",
-    role: params.contributionDetails.role,
-    createdAt: new Date().toISOString(),
-    ...(params.contributionDetails.contributionDescription
-      ? {
-          contributionDescription:
-            params.contributionDetails.contributionDescription,
-        }
-      : {}),
-    ...(params.contributionDetails.startDate
-      ? { startDate: params.contributionDetails.startDate }
-      : {}),
-    ...(params.contributionDetails.endDate
-      ? { endDate: params.contributionDetails.endDate }
-      : {}),
-  };
-
-  assertValidRecord(
-    "contributionDetails",
-    detailsRecord,
-    OrgHypercertsClaimContributionDetails.validateRecord,
-  );
-  const detailsResult = await ctx.agent.com.atproto.repo.createRecord({
-    repo: ctx.activeDid,
-    collection: "org.hypercerts.claim.contribution",
-    record: detailsRecord,
-  });
-  const detailsRef = {
-    uri: detailsResult.data.uri,
-    cid: detailsResult.data.cid,
-  };
-
-  // 5. Create contributorInformation records for each contributor
-  const contributorRefs = await Promise.all(
-    params.contributors.map(async (identifier) => {
-      const infoRecord: OrgHypercertsClaimContributorInformation.Record = {
-        $type: "org.hypercerts.claim.contributorInformation",
-        identifier,
-        createdAt: new Date().toISOString(),
-      };
-      assertValidRecord(
-        "contributorInformation",
-        infoRecord,
-        OrgHypercertsClaimContributorInformation.validateRecord,
-      );
-      const infoResult = await ctx.agent.com.atproto.repo.createRecord({
-        repo: ctx.activeDid,
-        collection: "org.hypercerts.claim.contributorInformation",
-        record: infoRecord,
-      });
-      return { uri: infoResult.data.uri, cid: infoResult.data.cid };
-    }),
-  );
-
-  // Build new contributor entries
-  const newContributors = contributorRefs.map((ref) => ({
-    contributorIdentity: ref,
-    contributionDetails: detailsRef,
-  }));
-
-  const existingContributors = (existingRecord.contributors as unknown[]) || [];
-  existingRecord.contributors = [...existingContributors, ...newContributors];
-
-  // 6. Update hypercert with appended contributors
-  assertValidRecord(
-    "activity",
-    existingRecord,
-    OrgHypercertsClaimActivity.validateRecord,
-  );
-  const updateResult = await ctx.agent.com.atproto.repo.putRecord({
-    repo: ctx.activeDid,
-    collection: hypercertParsed.collection,
-    rkey: hypercertParsed.rkey,
-    record: existingRecord,
-  });
-
-  return { uri: updateResult.data.uri, cid: updateResult.data.cid };
+  return result;
 };
 
 export const addEvaluation = async (params: {
@@ -239,6 +143,28 @@ export const addEvaluation = async (params: {
     "org.hypercerts.claim.activity",
   );
 
+  // Resolve measurements AT-URIs to StrongRefs
+  const measurementRefs = evaluationData.measurements
+    ? await Promise.all(
+        evaluationData.measurements.map((uri) =>
+          resolveStrongRef(
+            ctx.agent,
+            uri,
+            "org.hypercerts.context.measurement",
+          ),
+        ),
+      )
+    : undefined;
+
+  // Resolve location AT-URI to StrongRef
+  const locationRef = evaluationData.location
+    ? await resolveStrongRef(
+        ctx.agent,
+        evaluationData.location,
+        "app.certified.location",
+      )
+    : undefined;
+
   const record: OrgHypercertsClaimEvaluation.Record = {
     $type: "org.hypercerts.context.evaluation",
     subject,
@@ -254,19 +180,8 @@ export const addEvaluation = async (params: {
           })),
         }
       : {}),
-    // measurements and location are passed as-is (AT-URIs); the index signature accepts them
-    ...(evaluationData.measurements
-      ? {
-          measurements:
-            evaluationData.measurements as unknown as OrgHypercertsClaimEvaluation.Record["measurements"],
-        }
-      : {}),
-    ...(evaluationData.location
-      ? {
-          location:
-            evaluationData.location as unknown as OrgHypercertsClaimEvaluation.Record["location"],
-        }
-      : {}),
+    ...(measurementRefs ? { measurements: measurementRefs } : {}),
+    ...(locationRef ? { location: locationRef } : {}),
   };
 
   assertValidRecord(

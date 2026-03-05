@@ -6,6 +6,10 @@ import {
   stringToLinearDocument,
 } from "@/lib/utils";
 import { assertValidRecord } from "@/lib/record-validation";
+import {
+  processContributions,
+  type ContributionEntry,
+} from "@/lib/contribution-helpers";
 import { NextRequest, NextResponse } from "next/server";
 import {
   OrgHypercertsClaimRights,
@@ -27,7 +31,7 @@ interface HypercertParams {
   endDate: string;
   rights?: HypercertRights;
   image?: File;
-  contributions?: Record<string, unknown>[];
+  contributions?: ContributionEntry[];
   workScope?: string[];
 }
 
@@ -65,12 +69,36 @@ export async function POST(req: NextRequest) {
       }
     };
 
+    type IncomingContribution = {
+      contributors: string[];
+      role?: string;
+      contributionDescription?: string;
+      startDate?: string;
+      endDate?: string;
+      contributionDetails?: {
+        role?: string;
+        contributionDescription?: string;
+        startDate?: string;
+        endDate?: string;
+      };
+    };
+
     const rights = parseOptionalJson<HypercertRights>(rightsRaw, "rights");
-    // TODO: process contributions after creation via addContribution
-    parseOptionalJson<Record<string, unknown>[]>(
+    const rawContributions = parseOptionalJson<IncomingContribution[]>(
       contributionsRaw,
       "contributions",
     );
+
+    const contributions: ContributionEntry[] | undefined =
+      rawContributions?.map((c) => ({
+        contributors: c.contributors,
+        role: c.role ?? c.contributionDetails?.role ?? "",
+        contributionDescription:
+          c.contributionDescription ??
+          c.contributionDetails?.contributionDescription,
+        startDate: c.startDate ?? c.contributionDetails?.startDate,
+        endDate: c.endDate ?? c.contributionDetails?.endDate,
+      }));
 
     const workScopeTags: string[] = workScopeRaw
       ? JSON.parse(workScopeRaw)
@@ -171,6 +199,18 @@ export async function POST(req: NextRequest) {
         collection: "org.hypercerts.claim.activity",
         record: claimRecord,
       });
+
+      // Process contributions best-effort — failure must not block the response
+      if (contributions && contributions.length > 0) {
+        void processContributions(
+          ctx,
+          claimResult.data.uri,
+          contributions,
+        ).catch((err: unknown) => {
+          console.error("processContributions failed (non-fatal):", err);
+        });
+      }
+
       const data = {
         hypercertUri: claimResult.data.uri,
         hypercertCid: claimResult.data.cid,
